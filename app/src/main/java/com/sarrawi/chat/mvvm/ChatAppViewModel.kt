@@ -6,7 +6,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.auth.oauth2.GoogleCredentials
 import com.sarrawi.chat.MyApplication
 import com.sarrawi.chat.SharedPrefs
 import com.sarrawi.chat.Utils
@@ -130,7 +129,7 @@ class ChatAppViewModel : ViewModel() {
 
                                         // استدعاء الدالة لإرسال الإشعار عبر FCM
                                         viewModelScope.launch(Dispatchers.IO) {
-                                            sendFCMNotificationWithOAuth(notificationRequest)
+//                                            sendFCMNotificationWithOAuth(notificationRequest)
                                         }
 
                                     } else {
@@ -149,54 +148,54 @@ class ChatAppViewModel : ViewModel() {
                 }
         }
 
-    private suspend fun sendFCMNotificationWithOAuth(notificationRequest: NotificationRequest) {
-        try {
-            // تحميل ملف حساب الخدمة (Service Account JSON)
-            val credentialsStream = context.assets.open("service.json")
-            val googleCredentials = GoogleCredentials.fromStream(credentialsStream)
-                .createScoped(listOf("https://www.googleapis.com/auth/firebase.messaging"))
-            googleCredentials.refreshIfExpired()
-
-            // الحصول على Access Token
-            val accessToken = googleCredentials.accessToken.tokenValue
-
-            // إعداد Retrofit أو استخدام OkHttp لإرسال الطلب
-            val client = OkHttpClient()
-            val mediaType = "application/json".toMediaType()
-
-            // JSON الخاص بالإشعار
-            val notificationJson = """
-            {
-              "to": "${notificationRequest.message.token}",
-              "notification": {
-                "title": "${notificationRequest.message.notification}",
-                "body": "${notificationRequest.message.data}"
-              }
-            }
-        """.trimIndent()
-
-            val requestBody = RequestBody.create(mediaType, notificationJson)
-
-            // إعداد طلب HTTP
-            val request = Request.Builder()
-                .url("https://fcm.googleapis.com/v1/projects/YOUR_PROJECT_ID/messages:send")
-                .post(requestBody)
-                .addHeader("Authorization", "Bearer $accessToken")
-                .addHeader("Content-Type", "application/json")
-                .build()
-
-            // تنفيذ الطلب
-            val response = client.newCall(request).execute()
-
-            if (response.isSuccessful) {
-                println("Notification sent successfully: ${response.body?.string()}")
-            } else {
-                println("Failed to send notification: ${response.body?.string()}")
-            }
-        } catch (e: Exception) {
-            println("Error sending notification: ${e.message}")
-        }
-    }
+//    private suspend fun sendFCMNotificationWithOAuth(notificationRequest: NotificationRequest) {
+//        try {
+//            // تحميل ملف حساب الخدمة (Service Account JSON)
+////            val credentialsStream = context.assets.open("service.json")
+////            val googleCredentials = GoogleCredentials.fromStream(credentialsStream)
+////                .createScoped(listOf("https://www.googleapis.com/auth/firebase.messaging"))
+////            googleCredentials.refreshIfExpired()
+//
+//            // الحصول على Access Token
+////            val accessToken = googleCredentials.accessToken.tokenValue
+//
+//            // إعداد Retrofit أو استخدام OkHttp لإرسال الطلب
+//            val client = OkHttpClient()
+//            val mediaType = "application/json".toMediaType()
+//
+//            // JSON الخاص بالإشعار
+//            val notificationJson = """
+//            {
+//              "to": "${notificationRequest.message.token}",
+//              "notification": {
+//                "title": "${notificationRequest.message.notification}",
+//                "body": "${notificationRequest.message.data}"
+//              }
+//            }
+//        """.trimIndent()
+//
+//            val requestBody = RequestBody.create(mediaType, notificationJson)
+//
+//            // إعداد طلب HTTP
+//            val request = Request.Builder()
+//                .url("https://fcm.googleapis.com/v1/projects/YOUR_PROJECT_ID/messages:send")
+//                .post(requestBody)
+//                .addHeader("Authorization", "Bearer $accessToken")
+//                .addHeader("Content-Type", "application/json")
+//                .build()
+//
+//            // تنفيذ الطلب
+//            val response = client.newCall(request).execute()
+//
+//            if (response.isSuccessful) {
+//                println("Notification sent successfully: ${response.body?.string()}")
+//            } else {
+//                println("Failed to send notification: ${response.body?.string()}")
+//            }
+//        } catch (e: Exception) {
+//            println("Error sending notification: ${e.message}")
+//        }
+//    }
 
 
     fun getCurrentUser() = viewModelScope.launch(Dispatchers.IO) {

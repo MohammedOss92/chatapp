@@ -4,4 +4,4 @@ data class Message(
     val token: String,
     val notification: NotificationData,
     val data: Map<String, String>
-)//
+)

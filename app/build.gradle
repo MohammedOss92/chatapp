@@ -109,7 +109,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-firestore-ktx'
     implementation 'com.google.firebase:firebase-messaging-ktx'
     implementation 'com.firebaseui:firebase-ui-firestore:8.0.2'
-
-    implementation 'com.google.auth:google-auth-library-oauth2-http:1.15.0'
+//
+//    implementation 'com.google.auth:google-auth-library-oauth2-http:1.16.0'
 
 }
