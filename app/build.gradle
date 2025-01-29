@@ -3,7 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-kapt'
     id 'androidx.navigation.safeargs.kotlin'
-    id("com.google.gms.google-services")
+    id "com.google.gms.google-services"
 }
 
 android {
@@ -25,24 +25,33 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
     kotlinOptions {
         jvmTarget = '1.8'
     }
+
     buildFeatures {
         viewBinding true
+        dataBinding true
     }
 
-    dataBinding{
-        enabled true
+    packagingOptions {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
     }
+    lint {
+        baseline = file("lint-baseline.xml")
+    }
+
 }
 
 dependencies {
-
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
@@ -93,16 +102,14 @@ dependencies {
 
     implementation 'com.google.android.gms:play-services-ads:23.2.0'
 
+
     implementation platform('com.google.firebase:firebase-bom:31.3.0')
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-firestore-ktx'
-    implementation 'com.google.auth:google-auth-library-oauth2-http:1.1.0'
-
     implementation 'com.google.firebase:firebase-messaging-ktx'
-
     implementation 'com.firebaseui:firebase-ui-firestore:8.0.2'
 
-    
-}
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.15.0'
 
+}

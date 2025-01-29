@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.auth.oauth2.GoogleCredentials
 import com.sarrawi.chat.MyApplication
 import com.sarrawi.chat.SharedPrefs
 import com.sarrawi.chat.Utils
@@ -15,8 +16,16 @@ import com.sarrawi.chat.modal.Users
 import com.sarrawi.chat.notifications.entity.NotificationDataa
 import com.sarrawi.chat.notifications.entity.Token
 import com.google.firebase.firestore.FirebaseFirestore
+import com.sarrawi.chat.Utils.Companion.context
 import com.sarrawi.chat.notifications.noti.*
 import kotlinx.coroutines.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.io.FileInputStream
 
 class ChatAppViewModel : ViewModel() {
     val message = MutableLiveData<String>()
@@ -40,216 +49,6 @@ class ChatAppViewModel : ViewModel() {
     }
 
 
-    // sendMessage
-
-//    fun sendMessage(sender: String, receiver: String, friendname: String, friendimage: String) =
-//        viewModelScope.launch(Dispatchers.IO) {
-//
-//            val context = MyApplication.instance.applicationContext
-//
-//            val hashMap = hashMapOf<String, Any>(
-//                "sender" to sender,
-//                "receiver" to receiver,
-//                "message" to message.value!!,
-//                "time" to Utils.getTime()
-//            )
-//
-//
-//            val uniqueId = listOf(sender, receiver).sorted()
-//            uniqueId.joinToString(separator = "")
-//
-//
-//            val friendnamesplit = friendname.split("\\s".toRegex())[0]
-//            val mysharedPrefs = SharedPrefs(context)
-//            mysharedPrefs.setValue("friendid", receiver)
-//            mysharedPrefs.setValue("chatroomid", uniqueId.toString())
-//            mysharedPrefs.setValue("friendname", friendnamesplit)
-//            mysharedPrefs.setValue("friendimage", friendimage)
-//
-//
-//
-//
-//            firestore.collection("Messages").document(uniqueId.toString()).collection("chats")
-//                .document(Utils.getTime()).set(hashMap).addOnCompleteListener { taskmessage ->
-//
-//
-//                    val setHashap = hashMapOf<String, Any>(
-//                        "friendid" to receiver,
-//                        "time" to Utils.getTime(),
-//                        "sender" to Utils.getUidLoggedIn(),
-//                        "message" to message.value!!,
-//                        "friendsimage" to friendimage,
-//                        "name" to friendname,
-//                        "person" to "you"
-//                    )
-//
-//
-//                    firestore.collection("Conversation${Utils.getUidLoggedIn()}").document(receiver)
-//                        .set(setHashap)
-//
-//
-//
-//                    firestore.collection("Conversation${receiver}").document(Utils.getUidLoggedIn())
-//                        .update(
-//                            "message",
-//                            message.value!!,
-//                            "time",
-//                            Utils.getTime(),
-//                            "person",
-//                            name.value!!
-//                        )
-//
-//
-//
-//                      firestore.collection("Tokens").document(receiver).addSnapshotListener { value, error ->
-//
-//
-//                          if (value != null && value.exists()) {
-//
-//
-//                              val tokenObject = value.toObject(Token::class.java)
-//
-//
-//                              token = tokenObject?.token!!
-//
-//
-//                              val loggedInUsername =
-//                                  mysharedPrefs.getValue("username")!!.split("\\s".toRegex())[0]
-//
-//
-//
-//                              if (message.value!!.isNotEmpty() && receiver.isNotEmpty()) {
-//
-//                                  NotificationRequest(
-//                                      NotificationDataa(loggedInUsername, message.value!!), token!!
-//                                  ).also {
-//                                      sendNotification(it)
-//                                  }
-//
-//                              } else {
-//
-//
-//                                  Log.e("ChatAppViewModel", "NO TOKEN, NO NOTIFICATION")
-//                              }
-//
-//
-//                          }
-//
-//                          Log.e("ViewModel", token.toString())
-//
-//
-//
-//                          if (taskmessage.isSuccessful){
-//
-//                              message.value = ""
-//
-//
-//
-//                          }
-//
-//
-//                      }
-//                   }
-//
-//
-//
-//
-//
-//        }
-//
-
-    suspend fun sendFCMNotification(notificationRequest: NotificationRequest) {
-        try {
-            val accessToken = FCMAuthHelper.getAccessToken() // الحصول على رمز الوصول
-            val response = RetrofitClient.api.sendNotification(accessToken, notificationRequest)
-
-            if (response.isSuccessful) {
-                println("Notification sent successfully!")
-            } else {
-                println("Error sending notification: ${response.errorBody()?.string()}")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            println("Failed to send notification: ${e.message}")
-        }
-    }
-
-
-    fun sendMessage(sender: String, receiver: String, friendname: String, friendimage: String) =
-        viewModelScope.launch(Dispatchers.IO) {  // هنا، يتم تشغيل الكود داخل كوروتين باستخدام viewModelScope
-
-            val context = MyApplication.instance.applicationContext
-
-            // إعداد البيانات الخاصة بالرسالة
-            val hashMap = hashMapOf<String, Any>(
-                "sender" to sender,
-                "receiver" to receiver,
-                "message" to message.value!!,
-                "time" to Utils.getTime()
-            )
-
-            val uniqueId = listOf(sender, receiver).sorted().joinToString(separator = "")
-
-            val friendnamesplit = friendname.split("\\s".toRegex())[0]
-            val mysharedPrefs = SharedPrefs(context)
-            mysharedPrefs.setValue("friendid", receiver)
-            mysharedPrefs.setValue("chatroomid", uniqueId)
-            mysharedPrefs.setValue("friendname", friendnamesplit)
-            mysharedPrefs.setValue("friendimage", friendimage)
-
-            firestore.collection("Messages").document(uniqueId).collection("chats")
-                .document(Utils.getTime()).set(hashMap).addOnCompleteListener { taskMessage ->
-
-                    if (taskMessage.isSuccessful) {
-                        val setHashmap = hashMapOf<String, Any>(
-                            "friendid" to receiver,
-                            "time" to Utils.getTime(),
-                            "sender" to Utils.getUidLoggedIn(),
-                            "message" to message.value!!,
-                            "friendsimage" to friendimage,
-                            "name" to friendname,
-                            "person" to "you"
-                        )
-
-                        firestore.collection("Conversation${Utils.getUidLoggedIn()}").document(receiver)
-                            .set(setHashmap)
-
-                        firestore.collection("Conversation${receiver}").document(Utils.getUidLoggedIn())
-                            .update("message", message.value!!, "time", Utils.getTime(), "person", name.value!!)
-
-                        firestore.collection("Tokens").document(receiver).addSnapshotListener { value, _ ->
-                            if (value != null && value.exists()) {
-                                val tokenObject = value.toObject(Token::class.java)
-                                val currentToken = tokenObject?.token
-
-                                if (!currentToken.isNullOrEmpty()) {
-                                    val loggedInUsername = mysharedPrefs.getValue("username")!!.split("\\s".toRegex())[0]
-
-                                    if (message.value!!.isNotEmpty() && receiver.isNotEmpty()) {
-                                        val notificationRequest = NotificationRequest(
-                                            Message(currentToken, NotificationData(loggedInUsername, message.value!!), mapOf("senderId" to sender, "messageBody" to message.value!!))
-                                        )
-                                        // استدعاء الدالة المعلقة داخل الكوروتين
-                                        viewModelScope.launch(Dispatchers.IO) {
-                                            sendFCMNotification(notificationRequest)
-                                        }// يجب أن تكون هذه الدالة ضمن الكوروتين
-                                    } else {
-                                        Log.e("ChatAppViewModel", "NO TOKEN, NO NOTIFICATION")
-                                    }
-                                } else {
-                                    Log.e("ChatAppViewModel", "Token is null or empty")
-                                }
-                            }
-
-                            Log.d("ViewModel", token.toString())
-
-                            if (taskMessage.isSuccessful) {
-                                message.value = ""
-                            }
-                        }
-                    }
-                }
-        }
 
 
     // getting messages
@@ -271,15 +70,133 @@ class ChatAppViewModel : ViewModel() {
     }
 
 
-//    fun sendNotification(notification: NotificationRequest) = viewModelScope.launch {
-//        try {
-//            val response = RetrofitClient.api.sendNotification(notification)
-//        } catch (e: Exception) {
-//
-//            Log.e("ViewModelError", e.toString())
-//            // showToast(e.message.toString())
-//        }
-//    }
+    // دالة إرسال الرسالة
+    fun sendMessage(sender: String, receiver: String, friendname: String, friendimage: String) =
+        viewModelScope.launch(Dispatchers.IO) {  // تشغيل الكود داخل كوروتين باستخدام viewModelScope
+
+            val context = MyApplication.instance.applicationContext
+
+            // إعداد البيانات الخاصة بالرسالة
+            val hashMap = hashMapOf<String, Any>(
+                "sender" to sender,
+                "receiver" to receiver,
+                "message" to message.value!!,
+                "time" to Utils.getTime()
+            )
+
+            val uniqueId = listOf(sender, receiver).sorted().joinToString(separator = "")
+
+            val friendnamesplit = friendname.split("\\s".toRegex())[0]
+            val mysharedPrefs = SharedPrefs(context)
+            mysharedPrefs.setValue("friendid", receiver)
+            mysharedPrefs.setValue("chatroomid", uniqueId)
+            mysharedPrefs.setValue("friendname", friendnamesplit)
+            mysharedPrefs.setValue("friendimage", friendimage)
+
+            // إرسال الرسالة إلى Firestore
+            firestore.collection("Messages").document(uniqueId).collection("chats")
+                .document(Utils.getTime()).set(hashMap).addOnCompleteListener { taskMessage ->
+
+                    if (taskMessage.isSuccessful) {
+                        val setHashmap = hashMapOf<String, Any>(
+                            "friendid" to receiver,
+                            "time" to Utils.getTime(),
+                            "sender" to Utils.getUidLoggedIn(),
+                            "message" to message.value!!,
+                            "friendsimage" to friendimage,
+                            "name" to friendname,
+                            "person" to "you"
+                        )
+
+                        firestore.collection("Conversation${Utils.getUidLoggedIn()}").document(receiver)
+                            .set(setHashmap)
+
+                        firestore.collection("Conversation${receiver}").document(Utils.getUidLoggedIn())
+                            .update("message", message.value!!, "time", Utils.getTime(), "person", name.value!!)
+
+                        // استماع إلى التوكن الخاص بالمستقبل (المستلم)
+                        firestore.collection("Tokens").document(receiver).addSnapshotListener { value, _ ->
+                            if (value != null && value.exists()) {
+                                val tokenObject = value.toObject(Token::class.java)
+                                val currentToken = tokenObject?.token
+
+                                if (!currentToken.isNullOrEmpty()) {
+                                    val loggedInUsername = mysharedPrefs.getValue("username")!!.split("\\s".toRegex())[0]
+
+                                    if (message.value!!.isNotEmpty() && receiver.isNotEmpty()) {
+                                        val notificationRequest = NotificationRequest(
+                                            Message(currentToken, NotificationData(loggedInUsername, message.value!!), mapOf("senderId" to sender, "messageBody" to message.value!!))
+                                        )
+
+                                        // استدعاء الدالة لإرسال الإشعار عبر FCM
+                                        viewModelScope.launch(Dispatchers.IO) {
+                                            sendFCMNotificationWithOAuth(notificationRequest)
+                                        }
+
+                                    } else {
+                                        Log.e("ChatAppViewModel", "NO TOKEN, NO NOTIFICATION")
+                                    }
+                                } else {
+                                    Log.e("ChatAppViewModel", "Token is null or empty")
+                                }
+                            }
+                        }
+
+                        if (taskMessage.isSuccessful) {
+                            message.value = ""  // إعادة تعيين الرسالة بعد إرسالها بنجاح
+                        }
+                    }
+                }
+        }
+
+    private suspend fun sendFCMNotificationWithOAuth(notificationRequest: NotificationRequest) {
+        try {
+            // تحميل ملف حساب الخدمة (Service Account JSON)
+            val credentialsStream = context.assets.open("service.json")
+            val googleCredentials = GoogleCredentials.fromStream(credentialsStream)
+                .createScoped(listOf("https://www.googleapis.com/auth/firebase.messaging"))
+            googleCredentials.refreshIfExpired()
+
+            // الحصول على Access Token
+            val accessToken = googleCredentials.accessToken.tokenValue
+
+            // إعداد Retrofit أو استخدام OkHttp لإرسال الطلب
+            val client = OkHttpClient()
+            val mediaType = "application/json".toMediaType()
+
+            // JSON الخاص بالإشعار
+            val notificationJson = """
+            {
+              "to": "${notificationRequest.message.token}",
+              "notification": {
+                "title": "${notificationRequest.message.notification}",
+                "body": "${notificationRequest.message.data}"
+              }
+            }
+        """.trimIndent()
+
+            val requestBody = RequestBody.create(mediaType, notificationJson)
+
+            // إعداد طلب HTTP
+            val request = Request.Builder()
+                .url("https://fcm.googleapis.com/v1/projects/YOUR_PROJECT_ID/messages:send")
+                .post(requestBody)
+                .addHeader("Authorization", "Bearer $accessToken")
+                .addHeader("Content-Type", "application/json")
+                .build()
+
+            // تنفيذ الطلب
+            val response = client.newCall(request).execute()
+
+            if (response.isSuccessful) {
+                println("Notification sent successfully: ${response.body?.string()}")
+            } else {
+                println("Failed to send notification: ${response.body?.string()}")
+            }
+        } catch (e: Exception) {
+            println("Error sending notification: ${e.message}")
+        }
+    }
 
 
     fun getCurrentUser() = viewModelScope.launch(Dispatchers.IO) {

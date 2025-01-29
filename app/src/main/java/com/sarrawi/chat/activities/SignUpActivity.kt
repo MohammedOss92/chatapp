@@ -6,13 +6,14 @@ import android.app.ProgressDialog
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import com.sarrawi.chat.R
 import com.sarrawi.chat.databinding.ActivitySignUpBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-
+import com.google.firebase.messaging.FirebaseMessaging
 
 
 class SignUpActivity : AppCompatActivity() {
@@ -147,21 +148,46 @@ class SignUpActivity : AppCompatActivity() {
                 val user = auth.currentUser
 
                 if (user != null) {
+                    val userId = user.uid // الحصول على معرف المستخدم
+
+                    // بيانات المستخدم
                     val dataHashMap = hashMapOf(
-                        "userid" to user.uid,
+                        "userid" to userId,
                         "username" to name,
                         "useremail" to email,
                         "status" to "default",
                         "imageUrl" to "https://www.pngarts.com/files/6/User-Avatar-in-Suit-PNG.png"
                     )
 
-                    firestore.collection("Users").document(user.uid).set(dataHashMap)
+                    // إضافة بيانات المستخدم إلى Firestore
+                    firestore.collection("Users").document(userId).set(dataHashMap)
                         .addOnCompleteListener { firestoreTask ->
                             if (firestoreTask.isSuccessful) {
+                                // بعد حفظ بيانات المستخدم، احصل على الـ token
+                                FirebaseMessaging.getInstance().token.addOnCompleteListener { tokenTask ->
+                                    if (tokenTask.isSuccessful) {
+                                        val token = tokenTask.result
+                                        if (!token.isNullOrEmpty()) {
+                                            val tokenData = hashMapOf("token" to token)
+                                            // حفظ الـ token في Firestore
+                                            firestore.collection("Tokens").document(userId).set(tokenData)
+                                                .addOnSuccessListener {
+                                                    Log.d("Token", "Token saved successfully!")
+                                                }
+                                                .addOnFailureListener { e ->
+                                                    Log.e("Token", "Error saving token: ${e.message}")
+                                                }
+                                        }
+                                    } else {
+                                        Log.e("Token", "Error fetching token: ${tokenTask.exception?.message}")
+                                    }
+                                }
+
                                 Toast.makeText(this, "User created and data added!", Toast.LENGTH_SHORT).show()
                                 pd.dismiss()
                                 startActivity(Intent(this, SignInActivity::class.java))
                             } else {
+                                pd.dismiss()
                                 Toast.makeText(this, "Error: ${firestoreTask.exception?.message}", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -172,5 +198,6 @@ class SignUpActivity : AppCompatActivity() {
             }
         }
     }
+
 
 }
