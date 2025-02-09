@@ -92,7 +92,7 @@ class HomeFragment : Fragment(), OnItemClickListener, onChatClicked {
 
         })
 
-        circleImageView.setBackgroundResource(R.drawable.person)
+
 
 
 //

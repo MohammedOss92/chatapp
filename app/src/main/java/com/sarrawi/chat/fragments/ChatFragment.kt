@@ -70,29 +70,27 @@ class ChatFragment : Fragment() {
 
 
 
-        // افترض أن لديك صورة ثابتة في Resources مثل R.drawable.person
-        Glide.with(view.context)
-            .load(args.users.imageUrl ?: R.drawable.person)  // إذا كانت imageUrl فارغة، استخدم الصورة الافتراضية
-            .placeholder(R.drawable.person)  // صورة التحميل أثناء تحميل الصورة
-            .dontAnimate()  // إيقاف التأثيرات الحركية
-            .into(circleImageView)
-
-
+        Glide.with(view.getContext()).load(args.users.imageUrl!!).placeholder(R.drawable.person).dontAnimate().into(circleImageView);
         textViewName.setText(args.users.username)
         textViewStatus.setText(args.users.status)
 
+
         chatBackBtn.setOnClickListener {
+
+
             view.findNavController().navigate(R.id.action_chatFragment_to_homeFragment)
+
         }
 
         binding.sendBtn.setOnClickListener {
-            // إذا كانت imageUrl فارغة، نمرر صورة ثابتة في الرسالة
-            viewModel.sendMessage(
-                Utils.getUidLoggedIn(),
-                args.users.userid!!,
-                args.users.username!!,
-                args.users.imageUrl ?: R.drawable.person.toString() // تحويل الصورة الافتراضية إلى String
-            )
+
+
+            viewModel.sendMessage(Utils.getUidLoggedIn(), args.users.userid!!, args.users.username!!, args.users.imageUrl!!)
+
+
+
+
+
         }
 
 

@@ -52,8 +52,8 @@ class UserAdapter : RecyclerView.Adapter<UserHolder>() {
 
         }
 
-        holder.imageProfile.setImageResource(R.drawable.person)
-//        Glide.with(holder.itemView.context).load(users.imageUrl).into(holder.imageProfile)
+
+        Glide.with(holder.itemView.context).load(users.imageUrl).into(holder.imageProfile)
 
         holder.itemView.setOnClickListener {
             listener?.onUserSelected(position, users)
@@ -77,7 +77,7 @@ class UserAdapter : RecyclerView.Adapter<UserHolder>() {
 class UserHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
 
     val profileName: TextView = itemView.findViewById(R.id.userName)
-    val imageProfile : ImageView = itemView.findViewById(R.id.imageViewUser)
+    val imageProfile : CircleImageView = itemView.findViewById(R.id.imageViewUser)
     val statusImageView: ImageView = itemView.findViewById(R.id.statusOnline)
 
 

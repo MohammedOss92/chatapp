@@ -41,8 +41,7 @@
             android:layout_gravity="end"
             app:civ_border_width="1dp"
             app:civ_border_color="#FE2C54"
-            android:id="@+id/tlImage"
-            android:src="@drawable/person" />
+            android:id="@+id/tlImage"/>
 
         <ImageView
             android:layout_width="35dp"

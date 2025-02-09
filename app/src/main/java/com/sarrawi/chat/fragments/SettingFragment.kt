@@ -24,7 +24,8 @@ import com.sarrawi.chat.R
 import com.sarrawi.chat.Utils
 import com.sarrawi.chat.databinding.FragmentSettingBinding
 import com.sarrawi.chat.mvvm.ChatAppViewModel
-
+//import com.google.firebase.storage.FirebaseStorage
+//import com.google.firebase.storage.StorageReference
 import java.io.ByteArrayOutputStream
 import java.util.*
 
@@ -33,7 +34,8 @@ class SettingFragment : Fragment() {
     lateinit var viewModel: ChatAppViewModel
     lateinit var binding : FragmentSettingBinding
 
-
+//    private lateinit var storageRef: StorageReference
+//    lateinit var storage: FirebaseStorage
     var uri: Uri? = null
 
     lateinit var bitmap: Bitmap
@@ -60,7 +62,8 @@ class SettingFragment : Fragment() {
 
 
 
-
+//        storage = FirebaseStorage.getInstance()
+//        storageRef = storage.reference
 
 
 
@@ -89,34 +92,34 @@ class SettingFragment : Fragment() {
         }
 
 
-//        binding.settingUpdateImage.setOnClickListener {
-//
-//            val options = arrayOf<CharSequence>("Take Photo", "Choose from Gallery", "Cancel")
-//            val builder = AlertDialog.Builder(requireContext())
-//            builder.setTitle("Choose your profile picture")
-//            builder.setItems(options) { dialog, item ->
-//                when {
-//                    options[item] == "Take Photo" -> {
-//
-//                        takePhotoWithCamera()
-//
-//
-//                    }
-//                    options[item] == "Choose from Gallery" -> {
-//                        pickImageFromGallery()
-//                    }
-//                    options[item] == "Cancel" -> dialog.dismiss()
-//                }
-//            }
-//            builder.show()
-//
-//
-//
-//
-//
-//
-//        }
-//
+        binding.settingUpdateImage.setOnClickListener {
+
+            val options = arrayOf<CharSequence>("Take Photo", "Choose from Gallery", "Cancel")
+            val builder = AlertDialog.Builder(requireContext())
+            builder.setTitle("Choose your profile picture")
+            builder.setItems(options) { dialog, item ->
+                when {
+                    options[item] == "Take Photo" -> {
+
+                        takePhotoWithCamera()
+
+
+                    }
+                    options[item] == "Choose from Gallery" -> {
+                        pickImageFromGallery()
+                    }
+                    options[item] == "Cancel" -> dialog.dismiss()
+                }
+            }
+            builder.show()
+
+
+
+
+
+
+        }
+
 
 
     }
@@ -165,11 +168,13 @@ class SettingFragment : Fragment() {
                 Utils.REQUEST_IMAGE_CAPTURE -> {
                     val imageBitmap = data?.extras?.get("data") as Bitmap
 
+//                    uploadImageToFirebaseStorage(imageBitmap)
                 }
                 Utils.REQUEST_IMAGE_PICK -> {
                     val imageUri = data?.data
                     val imageBitmap =
                         MediaStore.Images.Media.getBitmap(context?.contentResolver, imageUri)
+//                    uploadImageToFirebaseStorage(imageBitmap)
                 }
             }
         }
@@ -177,6 +182,42 @@ class SettingFragment : Fragment() {
 
     }
 
+//    private fun uploadImageToFirebaseStorage(imageBitmap: Bitmap?) {
+//
+//        val baos = ByteArrayOutputStream()
+//        imageBitmap?.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+//        val data = baos.toByteArray()
+//
+//
+//        bitmap = imageBitmap!!
+//
+//        binding.settingUpdateImage.setImageBitmap(imageBitmap)
+//
+//        val storagePath = storageRef.child("Photos/${UUID.randomUUID()}.jpg")
+//        val uploadTask = storagePath.putBytes(data)
+//        uploadTask.addOnSuccessListener {
+//
+//
+//            val task = it.metadata?.reference?.downloadUrl
+//
+//            task?.addOnSuccessListener {
+//
+//                uri = it
+//                viewModel.imageUrl.value = uri.toString()
+//
+//
+//            }
+//
+//
+//
+//
+//
+//
+//            Toast.makeText(context, "Image uploaded successfully!", Toast.LENGTH_SHORT).show()
+//        }.addOnFailureListener {
+//            Toast.makeText(context, "Failed to upload image!", Toast.LENGTH_SHORT).show()
+//        }
+//    }
 
 
 
