@@ -1,8 +1,14 @@
 package com.sarrawi.chat
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.appcompat.widget.Toolbar
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavController
@@ -13,8 +19,10 @@ import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
+import com.sarrawi.chat.notifications.FirebaseService
 
 @Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity() {
@@ -41,6 +49,8 @@ class MainActivity : AppCompatActivity() {
         navController = navHostFragment.navController
 
         generateToken()
+        FirebaseService().saveFCMTokenToFirestore()
+
 
     }
 
@@ -138,6 +148,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+
 }
 
 

@@ -32,6 +32,14 @@ import retrofit2.Callback
 import java.util.*
 import kotlin.math.max
 import kotlin.math.min
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+
+import com.google.firebase.firestore.Query
 
 class ChatAppViewModel : ViewModel() {
 
@@ -181,7 +189,47 @@ class ChatAppViewModel : ViewModel() {
 
 
         }
+    fun listenForNewMessages(context: Context) {
+        val db = FirebaseFirestore.getInstance()
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
+        db.collection("Messages")
+            .whereEqualTo("receiver_id", userId)
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshots, e ->
+                if (e != null) {
+                    return@addSnapshotListener
+                }
+
+                for (doc in snapshots!!.documentChanges) {
+                    val senderId = doc.document.getString("sender_id") ?: continue
+                    val messageText = doc.document.getString("message") ?: "رسالة جديدة"
+
+                    showNotification(context, "رسالة جديدة", messageText)
+                }
+            }
+    }
+
+    fun showNotification(context: Context, title: String, message: String) {
+        val channelId = "message_channel"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId, "Messages", NotificationManager.IMPORTANCE_HIGH
+            )
+            val manager = context.getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_email)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(1, notification)
+    }
 
     // getting messages
 
@@ -192,6 +240,8 @@ class ChatAppViewModel : ViewModel() {
 
 
     // get RecentUsers
+
+
 
 
     fun getRecentUsers(): LiveData<List<RecentChats>> {

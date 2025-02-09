@@ -20,7 +20,10 @@ import kotlin.random.Random
 import androidx.core.app.RemoteInput
 import androidx.navigation.NavDeepLinkBuilder
 import com.sarrawi.chat.SharedPrefs
-
+import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.firestore.FirebaseFirestore
 private const val CHANNEL_ID = "my_channel"
 
 class FirebaseService : FirebaseMessagingService() {
@@ -112,6 +115,28 @@ class FirebaseService : FirebaseMessagingService() {
         }
         notificationManager.createNotificationChannel(channel)
     }
+
+
+
+    fun saveFCMTokenToFirestore() {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val db = FirebaseFirestore.getInstance()
+
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("FCM", "Fetching FCM token failed", task.exception)
+                return@addOnCompleteListener
+            }
+
+            val token = task.result
+            val userRef = db.collection("Users").document(userId)
+
+            userRef.update("fcm_token", token)
+                .addOnSuccessListener { Log.d("FCM", "Token saved successfully") }
+                .addOnFailureListener { e -> Log.w("FCM", "Error saving token", e) }
+        }
+    }
+
 
 }
 
