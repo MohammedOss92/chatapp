@@ -19,7 +19,6 @@ import com.sarrawi.chat.notifications.FirebaseService.Companion.token
 import com.sarrawi.chat.notifications.entity.NotificationData
 import com.sarrawi.chat.notifications.entity.PushNotification
 import com.sarrawi.chat.notifications.entity.Token
-import com.sarrawi.chat.notifications.network.RetrofitInstance
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -35,14 +34,32 @@ import kotlin.math.min
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
+import android.provider.MediaStore
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.bumptech.glide.Glide
+import okhttp3.MediaType
+import okhttp3.RequestBody
 
 import com.google.firebase.firestore.Query
+import com.sarrawi.chat.Utils.Companion.context
+import com.sarrawi.chat.notifications.entity.NotificationRequest
+import com.sarrawi.chat.uploadImage.ApiService
+import com.sarrawi.chat.uploadImage.RetrofitClient
+import com.sarrawi.chat.uploadImage.RetrofitClientInstance
+import kotlinx.coroutines.tasks.await
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import java.io.ByteArrayOutputStream
+import java.io.File
 
 class ChatAppViewModel : ViewModel() {
 
+    private val _imageUrls = MutableLiveData<String>()
+    val imageUrls: LiveData<String> get() = _imageUrls
 
     val message = MutableLiveData<String>()
     val firestore = FirebaseFirestore.getInstance()
@@ -153,10 +170,13 @@ class ChatAppViewModel : ViewModel() {
 
                               if (message.value!!.isNotEmpty() && receiver.isNotEmpty()) {
 
-                                  PushNotification(
-                                      NotificationData(loggedInUsername, message.value!!), token!!
-                                  ).also {
-                                      sendNotification(it)
+                                  val notificationRequest = NotificationRequest(
+                                      token!!,  // التوكن المستلم من Firestore
+                                      message.value!!,  // الرسالة
+                                      loggedInUsername  // اسم المرسل
+                                  )
+//                                      sendNotificationToDjango(notificationRequest)
+                                  listenForNewMessages(context)
                                   }
 
                               } else {
@@ -188,7 +208,9 @@ class ChatAppViewModel : ViewModel() {
 
 
 
-        }
+
+
+
     fun listenForNewMessages(context: Context) {
         val db = FirebaseFirestore.getInstance()
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
@@ -252,15 +274,8 @@ class ChatAppViewModel : ViewModel() {
     }
 
 
-    fun sendNotification(notification: PushNotification) = viewModelScope.launch {
-        try {
-            val response = RetrofitInstance.api.postNotification(notification)
-        } catch (e: Exception) {
 
-            Log.e("ViewModelError", e.toString())
-            // showToast(e.message.toString())
-        }
-    }
+
 
 
     fun getCurrentUser() = viewModelScope.launch(Dispatchers.IO) {
@@ -322,10 +337,81 @@ class ChatAppViewModel : ViewModel() {
 
         firestore.collection("Conversation${friendid}").document(Utils.getUidLoggedIn()).update(hashMapUpdate)
 
-        firestore.collection("Conversation${Utils.getUidLoggedIn()}").document(friendid!!).update("person", "you")
+//        firestore.collection("Conversation${Utils.getUidLoggedIn()}").document(friendid!!).update("person", "you")
 
 
 
+    }
+
+
+    private val apiService = RetrofitClient.getInstance().create(ApiService::class.java)
+
+
+
+    // دالة لحفظ الرابط في Firestore
+    fun uploadImageAndUpdateProfile(imageBitmap: Bitmap?) {
+        val baos = ByteArrayOutputStream()
+        imageBitmap?.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+        val data = baos.toByteArray()
+
+        val requestBody = RequestBody.create("image/jpeg".toMediaTypeOrNull(), data)
+        val imagePart = MultipartBody.Part.createFormData("image", "image.jpg", requestBody)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = apiService.sa(imagePart)
+                if (response.isSuccessful) {
+                    val imageUrl = response.body()?.imageUrl
+                    imageUrl?.let {
+                        withContext(Dispatchers.Main) {
+                            this@ChatAppViewModel.imageUrl.value = it // حفظ الرابط
+                            updateProfile(it) // تمرير رابط الصورة إلى دالة تحديث البروفايل
+                        }
+                    }
+                } else {
+                    Log.w("Retrofit", "فشل رفع الصورة: ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("Retrofit", "حدث خطأ أثناء رفع الصورة: ${e.message}")
+            }
+        }
+    }
+
+    fun updateProfile(imageUrl: String) = viewModelScope.launch(Dispatchers.IO) {
+        val context = MyApplication.instance.applicationContext
+
+        val hashMapUser = hashMapOf<String, Any>(
+            "username" to (name.value ?: ""),
+            "imageUrl" to imageUrl
+        )
+
+        firestore.collection("Users").document(Utils.getUidLoggedIn())
+            .update(hashMapUser)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Toast.makeText(context, "تم تحديث الملف الشخصي بنجاح", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "فشل تحديث الملف الشخصي", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+        // تحديث بيانات المحادثات
+        val mySharedPrefs = SharedPrefs(context)
+        val friendId = mySharedPrefs.getValue("friendid")
+
+        val hashMapUpdate = hashMapOf<String, Any>(
+            "friendsimage" to imageUrl,
+            "name" to (name.value ?: ""),
+            "person" to (name.value ?: "")
+        )
+
+        firestore.collection("Conversation${friendId}")
+            .document(Utils.getUidLoggedIn())
+            .update(hashMapUpdate)
+
+        firestore.collection("Conversation${Utils.getUidLoggedIn()}")
+            .document(friendId ?: "")
+            .update("person", "you")
     }
 
 

@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -20,13 +21,19 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
 import com.bumptech.glide.Glide
+import com.google.firebase.firestore.FirebaseFirestore
 import com.sarrawi.chat.R
 import com.sarrawi.chat.Utils
 import com.sarrawi.chat.databinding.FragmentSettingBinding
 import com.sarrawi.chat.mvvm.ChatAppViewModel
-//import com.google.firebase.storage.FirebaseStorage
-//import com.google.firebase.storage.StorageReference
+import com.sarrawi.chat.uploadImage.RetrofitClientInstance
+import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.util.*
 
 class SettingFragment : Fragment() {
@@ -70,7 +77,7 @@ class SettingFragment : Fragment() {
         viewModel.imageUrl.observe(viewLifecycleOwner, Observer {
 
 
-             loadImage(it)
+            loadImage(it)
 
 
 
@@ -92,33 +99,33 @@ class SettingFragment : Fragment() {
         }
 
 
-        binding.settingUpdateImage.setOnClickListener {
-
-            val options = arrayOf<CharSequence>("Take Photo", "Choose from Gallery", "Cancel")
-            val builder = AlertDialog.Builder(requireContext())
-            builder.setTitle("Choose your profile picture")
-            builder.setItems(options) { dialog, item ->
-                when {
-                    options[item] == "Take Photo" -> {
-
-                        takePhotoWithCamera()
-
-
-                    }
-                    options[item] == "Choose from Gallery" -> {
-                        pickImageFromGallery()
-                    }
-                    options[item] == "Cancel" -> dialog.dismiss()
-                }
-            }
-            builder.show()
-
-
-
-
-
-
-        }
+//        binding.settingUpdateImage.setOnClickListener {
+//
+//            val options = arrayOf<CharSequence>("Take Photo", "Choose from Gallery", "Cancel")
+//            val builder = AlertDialog.Builder(requireContext())
+//            builder.setTitle("Choose your profile picture")
+//            builder.setItems(options) { dialog, item ->
+//                when {
+//                    options[item] == "Take Photo" -> {
+//
+//                        takePhotoWithCamera()
+//
+//
+//                    }
+//                    options[item] == "Choose from Gallery" -> {
+//                        pickImageFromGallery()
+//                    }
+//                    options[item] == "Cancel" -> dialog.dismiss()
+//                }
+//            }
+//            builder.show()
+//
+//
+//
+//
+//
+//
+//        }
 
 
 
@@ -238,6 +245,10 @@ class SettingFragment : Fragment() {
 
 
     }
+
+
+
+
 
 
 }
