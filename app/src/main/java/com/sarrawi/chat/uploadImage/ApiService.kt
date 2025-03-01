@@ -12,6 +12,6 @@ interface ApiService {
     @POST("upload_image/")
     fun sa(@Part image: MultipartBody.Part): Response<ImageUploadResponse>
 
-
+//aa
 
 }
