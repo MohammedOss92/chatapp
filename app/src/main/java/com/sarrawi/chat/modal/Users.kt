@@ -2,6 +2,7 @@ package com.sarrawi.chat.modal
 
 import android.os.Parcel
 import android.os.Parcelable
+import com.google.firebase.firestore.PropertyName
 
 
 data class Users(
@@ -11,7 +12,8 @@ data class Users(
     val imageUrl : String? = "",
     val username: String? = "",
     val useremail : String? ="",
-
+    @PropertyName("fcm_token")
+    var fcmToken: String? = null
 
 
 

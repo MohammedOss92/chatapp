@@ -8,6 +8,11 @@ import com.sarrawi.chat.adapter.RecentChatAdapter
 import com.sarrawi.chat.modal.Messages
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.sarrawi.chat.uploadImage.ApiService
+import com.sarrawi.chat.uploadImage.ImageUploadResponse
+import com.sarrawi.chat.uploadImage.RetrofitClient
+import okhttp3.MultipartBody
+import retrofit2.Response
 import java.util.*
 
 class MessageRepo {
@@ -76,6 +81,10 @@ class MessageRepo {
 
     }
 
+    private val apiService = RetrofitClient.getInstance().create(ApiService::class.java)
 
+    suspend fun uploadImage(image: MultipartBody.Part): Response<ImageUploadResponse> {
+        return apiService.sa(image)
+    }
 
 }

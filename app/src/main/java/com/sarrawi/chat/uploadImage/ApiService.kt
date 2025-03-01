@@ -9,8 +9,7 @@ interface ApiService {
 
 
     @Multipart
-//    @POST("upload-imagefirebase/")
-    @POST("upload_imageaa/")
+    @POST("upload_image/")
     fun sa(@Part image: MultipartBody.Part): Response<ImageUploadResponse>
 
 

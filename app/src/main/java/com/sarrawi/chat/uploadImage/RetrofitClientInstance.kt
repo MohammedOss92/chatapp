@@ -6,7 +6,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClientInstance {
-    private const val BASE_URL = "http://www.sarrawi.com/"
+    private const val BASE_URL = "https://abdallah92.pythonanywhere.com/"
 
 
 
@@ -18,7 +18,7 @@ object RetrofitClientInstance {
 
         val api: ApiService by lazy {
             Retrofit.Builder()
-                .baseUrl("http://www.sarrawi.com/") // ضع عنوان السيرفر المحلي هنا
+                .baseUrl("https://abdallah92.pythonanywhere.com/") // ضع عنوان السيرفر المحلي هنا
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(client)
                 .build()
