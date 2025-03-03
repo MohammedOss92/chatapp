@@ -1,4 +1,4 @@
-package com.sarrawi.chat.uploadImage
+package com.sarrawi.chat.uploadImage.up2
 
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -27,5 +27,9 @@ object RetrofitClient {
     // دالة للحصول على Retrofit instance
     fun getInstance(): Retrofit {
         return retrofit
+    }
+
+    val apiService: ApiService by lazy {
+        retrofit.create(ApiService::class.java)
     }
 }

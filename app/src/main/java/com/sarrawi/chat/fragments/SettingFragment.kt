@@ -3,11 +3,17 @@
 package com.sarrawi.chat.fragments
 
 import android.annotation.SuppressLint
+import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -21,28 +27,32 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
 import com.bumptech.glide.Glide
-import com.google.firebase.firestore.FirebaseFirestore
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.google.android.material.snackbar.Snackbar
 import com.sarrawi.chat.R
 import com.sarrawi.chat.Utils
 import com.sarrawi.chat.databinding.FragmentSettingBinding
 import com.sarrawi.chat.mvvm.ChatAppViewModel
-import com.sarrawi.chat.uploadImage.Resource
-import com.sarrawi.chat.uploadImage.RetrofitClientInstance
-import okhttp3.MediaType
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import com.sarrawi.chat.uploadImage.up2.ApiService
+import com.sarrawi.chat.uploadImage.up2.UploadRequestBody
+import com.sarrawi.chat.uploadImage.up2.UploadResponse
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
-
-import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.util.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import java.io.IOException
+import java.net.SocketTimeoutException
 
-class SettingFragment : Fragment() {
+class SettingFragment : Fragment() , UploadRequestBody.UploadCallback{
 
     lateinit var viewModel: ChatAppViewModel
     lateinit var binding : FragmentSettingBinding
-
+    private var selectedImageUri: Uri? = null
 //    private lateinit var storageRef: StorageReference
 //    lateinit var storage: FirebaseStorage
     var uri: Uri? = null
@@ -71,30 +81,20 @@ class SettingFragment : Fragment() {
 
 
 
+//        storage = FirebaseStorage.getInstance()
+//        storageRef = storage.reference
+
+
+
+        viewModel.imageUrl.observe(viewLifecycleOwner, Observer {
+
+
+            loadImage(it)
 
 
 
 
-        viewModel.imageUrl2.observe(viewLifecycleOwner, Observer { imageUrl ->
-            imageUrl?.let {
-                loadImage(it) // تحميل الصورة عند تغيير imageUrl
-            }
         })
-//        viewModel.uploadResult.observe(viewLifecycleOwner, Observer { result ->
-//            when (result) {
-//                is Resource.Success -> {
-//                    val imageUrl = result.data
-//                    // Update UI with the new image URL (e.g., Glide)
-//                    Glide.with(requireContext()).load(imageUrl).into(binding.settingUpdateImage)
-//                }
-//                is Resource.Error -> {
-//                    Toast.makeText(requireContext(), result.message, Toast.LENGTH_SHORT).show()
-//                }
-//                is Resource.Loading -> {
-//                    // Show loading state if necessary
-//                }
-//            }
-//        })
 
         binding.settingBackBtn.setOnClickListener {
 
@@ -106,7 +106,6 @@ class SettingFragment : Fragment() {
         binding.settingUpdateButton.setOnClickListener {
 
             viewModel.updateProfile()
-
 
 
         }
@@ -146,24 +145,62 @@ class SettingFragment : Fragment() {
 
 
 
-//    private fun loadImage(imageUrl: String) {
-//
-//
-//
-//
-//        Glide.with(requireContext()).load(imageUrl).placeholder(R.drawable.person).dontAnimate()
-//            .into(binding.settingUpdateImage)
-//
-//
-//    }
+    private fun load2Image(imageUrl: String) {
+
+
+
+
+        Glide.with(requireContext()).load(imageUrl).placeholder(R.drawable.person).dontAnimate()
+            .into(binding.settingUpdateImage)
+
+
+    }
 
     private fun loadImage(imageUrl: String) {
-        // تحميل الصورة باستخدام Glide
+        //val imageUrl = imageUrl.trim().replace("%20", "")  // حذف %20 تمامًا من الرابط
+
+        val imageUrl = imageUrl.trim()
+            .replace("%20", "") // إزالة المسافات
+            .replace("media/media", "media") // إزالة التكرار في كلمة media
         Glide.with(requireContext())
-            .load(imageUrl) // استخدام imageUrl مباشرة
+            .load(imageUrl) // إزالة أي مسافات إضافية
+            .listener(object : RequestListener<Drawable> {
+
+
+
+
+                override fun onResourceReady(
+                    resource: Drawable,
+                    model: Any,
+                    target: com.bumptech.glide.request.target.Target<Drawable>?,
+                    dataSource: DataSource,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    return false
+                }
+
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any?,
+                    target: com.bumptech.glide.request.target.Target<Drawable>,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    Log.e("GlideError", "Failed to load image: ${e?.message}")
+                    return false
+                }
+            })
+            .into(binding.settingUpdateImage)
+
+
+        val fixedUrl = imageUrl.trim().replace(" ", "")
+        Glide.with(requireContext())
+            .load(fixedUrl)
             .placeholder(R.drawable.person) // صورة افتراضية أثناء التحميل
             .into(binding.settingUpdateImage)
+
     }
+
+
     @SuppressLint("QueryPermissionsNeeded")
     private fun pickImageFromGallery() {
 
@@ -185,87 +222,114 @@ class SettingFragment : Fragment() {
     }
 
 
+
+
+
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (resultCode == AppCompatActivity.RESULT_OK) {
             when (requestCode) {
-                Utils.REQUEST_IMAGE_CAPTURE -> {
-                    val imageBitmap = data?.extras?.get("data") as Bitmap
-                    viewModel.uploadImageAndUpdateProfile(imageBitmap)
-                }
                 Utils.REQUEST_IMAGE_PICK -> {
                     val imageUri = data?.data
-                    val imageBitmap =
-                        MediaStore.Images.Media.getBitmap(context?.contentResolver, imageUri)
-                    viewModel.uploadImageAndUpdateProfile(imageBitmap)
+                    if (imageUri == null) {
+                        Log.e("SettingFragment", "Image URI is null")
+                        return
+                    }
+
+                    Log.d("SettingFragment", "Original Image URI: $imageUri")
+
+                    val realPath = getRealPathFromURI(requireContext(), imageUri)
+                    val imageBitmap: Bitmap? = if (realPath != null) {
+                        BitmapFactory.decodeFile(realPath)
+                    } else {
+                        requireActivity().contentResolver.openInputStream(imageUri)?.use {
+                            BitmapFactory.decodeStream(it)
+                        }
+                    }
+
+                    if (imageBitmap != null) {
+                        uploadImage(imageBitmap)
+                    } else {
+                        Log.e("SettingFragment", "Failed to load image")
+                        Toast.makeText(context, "Error loading image", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
     }
 
-//
-//    @Deprecated("Deprecated in Java")
-//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-//        super.onActivityResult(requestCode, resultCode, data)
-//
-//        if (resultCode == AppCompatActivity.RESULT_OK) {
-//            when (requestCode) {
-//                Utils.REQUEST_IMAGE_CAPTURE -> {
-//                    val imageBitmap = data?.extras?.get("data") as Bitmap
-//                    val imageFile = convertBitmapToFile(imageBitmap) // تحويل Bitmap إلى File
-//
-//                    val userId = Utils.getUidLoggedIn() // احصل على الـ userId الحالي
-//                    if (imageFile != null) {
-//                        viewModel.uploadImageToServer(imageFile, userId)
-//                    }
-//                }
-//                Utils.REQUEST_IMAGE_PICK -> {
-//                    val imageUri = data?.data
-//                    if (imageUri != null) {
-//                        val imageFile = convertUriToFile(imageUri) // تحويل Uri إلى File
-//                        val userId = Utils.getUidLoggedIn()
-//                        if (imageFile != null) {
-//                            viewModel.uploadImageToServer(imageFile, userId)
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
 
-    private fun convertBitmapToFile(bitmap: Bitmap): File? {
-        val filesDir = requireContext().filesDir
-        val imageFile = File(filesDir, "profile_image_${System.currentTimeMillis()}.jpg")
+    private fun ContentResolver.getFileName(selectedImageUri: Uri): String {
+    var name = ""
+    val returnCursor = this.query(selectedImageUri,null,null,null,null)
+    if (returnCursor!=null){
+        val nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+        returnCursor.moveToFirst()
+        name = returnCursor.getString(nameIndex)
+        returnCursor.close()
+    }
 
-        return try {
-            val outputStream = FileOutputStream(imageFile)
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
-            outputStream.flush()
-            outputStream.close()
-            imageFile
-        } catch (e: Exception) {
+    return name
+}
+
+    private fun uploadImage(bitmap: Bitmap) {
+        try {
+            // تحويل `Bitmap` إلى ملف مؤقت
+            val file = bitmapToFile(bitmap) ?: run {
+                Toast.makeText(context, "Failed to create image file", Toast.LENGTH_SHORT).show()
+                Log.e("SettingFragment", "bitmapToFile returned null")
+                return
+            }
+
+            Log.d("SettingFragment", "Created file for upload: ${file.absolutePath}")
+
+            // إنشاء `RequestBody` لرفع الصورة
+            val body = UploadRequestBody(file, "image", requireContext())
+
+            // استدعاء API لرفع الصورة
+            ApiService().uploadImage(
+                MultipartBody.Part.createFormData("image", file.name, body)
+            ).enqueue(object : Callback<UploadResponse> {
+                override fun onResponse(call: Call<UploadResponse>, response: Response<UploadResponse>) {
+                    if (response.isSuccessful) {
+                        response.body()?.let { uploadResponse ->
+                            Log.d("SettingFragment", "Image uploaded successfully: ${uploadResponse.message}")
+                            binding.settingChatContainer.snackbar(uploadResponse.message)
+                        } ?: Log.e("SettingFragment", "Response body is null")
+                    } else {
+                        Log.e("SettingFragment", "Image upload failed: ${response.code()} - ${response.message()}")
+                    }
+                }
+
+                override fun onFailure(call: Call<UploadResponse>, t: Throwable) {
+                    Log.e("SettingFragment", "Image upload error: ${t.localizedMessage}", t)
+
+                    val errorMessage = when (t) {
+                        is IOException -> "Network error. Check your connection."
+                        is SocketTimeoutException -> "Connection timed out. Try again."
+                        else -> "Unexpected error occurred."
+                    }
+
+                    binding.settingChatContainer.snackbar(errorMessage)
+                }
+            })
+        } catch (e: IOException) {
             e.printStackTrace()
-            null
+            Log.e("SettingFragment", "Error processing image: ${e.message}")
         }
     }
 
-    private fun convertUriToFile(uri: Uri): File? {
-        val inputStream = requireContext().contentResolver.openInputStream(uri)
-        val tempFile = File(requireContext().cacheDir, "temp_image_${System.currentTimeMillis()}.jpg")
 
-        return try {
-            val outputStream = FileOutputStream(tempFile)
-            inputStream?.copyTo(outputStream)
-            outputStream.flush()
-            outputStream.close()
-            tempFile
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
+
+
+    private fun View.snackbar(message: String) {
+        Snackbar.make(this, message, Snackbar.LENGTH_LONG).also { snackbar ->
+            snackbar.setAction("OK") {
+                snackbar.dismiss()
+            }
+        }.show()}
 
 
     override fun onResume() {
@@ -286,9 +350,41 @@ class SettingFragment : Fragment() {
 
     }
 
+    override fun onProgressUpdate(percentage: Int) {
 
+    }
+    private fun bitmapToFile(bitmap: Bitmap): File? {
+        return try {
+            val file = File(requireContext().cacheDir, "uploaded_image_${System.currentTimeMillis()}.jpg")
+            val outputStream = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+            outputStream.flush()
+            outputStream.close()
+            file
+        } catch (e: IOException) {
+            e.printStackTrace()
+            Log.e("SettingFragment", "Failed to save bitmap: ${e.message}")
+            null
+        }
+    }
+    fun getRealPathFromURI(context: Context, uri: Uri): String? {
+        var realPath: String? = null
+        if (DocumentsContract.isDocumentUri(context, uri)) {
+            val documentId = DocumentsContract.getDocumentId(uri)
+            if (documentId.startsWith("raw:")) {
+                return documentId.removePrefix("raw:")
+            }
+        }
 
-
+        val projection = arrayOf(MediaStore.Images.Media.DATA)
+        context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+                realPath = cursor.getString(columnIndex)
+            }
+        }
+        return realPath
+    }
 
 
 }
