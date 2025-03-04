@@ -50,7 +50,13 @@ class ChatAppViewModel : ViewModel() {
     val messageRepo = MessageRepo()
     var token: String? = null
     val chatlistRepo = ChatListRepo()
+    private val _imageUrl = MutableLiveData<String>()
+    val imageUrl2: LiveData<String> get() = _imageUrl
 
+    // دالة لتحديث الرابط
+    fun setImageUrl(url: String) {
+        _imageUrl.value = url
+    }
     val coroutineExceptionHandler = CoroutineExceptionHandler { _, throwable ->
         throwable.printStackTrace()
     }
@@ -238,7 +244,7 @@ class ChatAppViewModel : ViewModel() {
     }
 
 
-    fun updateProfile1() = viewModelScope.launch(Dispatchers.IO) {
+    fun updateProfile() = viewModelScope.launch(Dispatchers.IO) {
 
         val context = MyApplication.instance.applicationContext
 
@@ -272,39 +278,6 @@ class ChatAppViewModel : ViewModel() {
 
 
 
-    }
-
-    fun updateProfile() = viewModelScope.launch(Dispatchers.IO) {
-        val context = MyApplication.instance.applicationContext
-        val imageUrl = imageUrl.value!!  // الحصول على رابط الصورة من الـ ViewModel
-
-        // تحديث بيانات المستخدم في Firestore
-        val hashMapUser = hashMapOf<String, Any>(
-            "username" to name.value!!,
-            "imageUrl" to imageUrl
-        )
-
-        firestore.collection("Users").document(Utils.getUidLoggedIn())
-            .update(hashMapUser).addOnCompleteListener {
-                if (it.isSuccessful) {
-                    Toast.makeText(context, "Updated", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-        // تحديث بيانات المحادثات في Firestore
-        val mysharedPrefs = SharedPrefs(context)
-        val friendid = mysharedPrefs.getValue("friendid")
-        val hashMapUpdate = hashMapOf<String, Any>(
-            "friendsimage" to imageUrl,
-            "name" to name.value!!,
-            "person" to name.value!!
-        )
-
-        firestore.collection("Conversation$friendid").document(Utils.getUidLoggedIn())
-            .update(hashMapUpdate)
-
-        firestore.collection("Conversation${Utils.getUidLoggedIn()}").document(friendid!!)
-            .update("person", "you")
     }
 
 

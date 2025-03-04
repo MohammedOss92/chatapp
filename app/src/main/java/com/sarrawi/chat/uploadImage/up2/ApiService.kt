@@ -15,12 +15,12 @@ interface ApiService {
 
     @Multipart
     @POST("upload_image/")
-    suspend fun sa(@Part image: MultipartBody.Part): Call<ImageUploadResponse>
+    fun sa(@Part image: MultipartBody.Part): Call<ImageUploadResponse>
 
 //aa
     @Multipart
     @POST("api/upload/") // تأكد من المسار الصحيح
-     fun uploadImage(
+      fun uploadImage(
         @Part image: MultipartBody.Part
     ): Call<UploadResponse>
 
