@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -30,6 +31,7 @@ import com.sarrawi.chat.mvvm.ChatAppViewModel
 import com.sarrawi.chat.uploadImage.up2.ApiService
 import com.sarrawi.chat.uploadImage.up2.UploadRequestBody
 import com.sarrawi.chat.uploadImage.up2.ImageUploadResponse
+import com.sarrawi.chat.uploadImage.up2.UploadResponse
 import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.Callback
@@ -261,53 +263,83 @@ class SettingFragment : Fragment() {
 
             val body = UploadRequestBody(file, "image", requireContext())
 
-            ApiService().sa(
+            ApiService().uploadImage(
                 MultipartBody.Part.createFormData(
                     "image", file.name, body
                 )
-            ).enqueue(object : Callback<ImageUploadResponse> {
+            ).enqueue(object : Callback<UploadResponse> {
                 override fun onResponse(
-                    call: Call<ImageUploadResponse>,
-                    response: Response<ImageUploadResponse>
+                    call: Call<UploadResponse>,
+                    response: Response<UploadResponse>
                 ) {
                     if (response.isSuccessful) {
-                        response.body()?.let {
-                            val uploadedImageUrl = it.imageUrl  // افترض أن الجسم يحتوي على رابط للصورة
+                        val body = response.body()
 
-                            // تحقق من الرابط قبل التحديث
-                            if (uploadedImageUrl != null) {
-                                // تحديث الـ LiveData في الـ ViewModel
-                                viewModel.setImageUrl(uploadedImageUrl)
+                        val uploadedImageUrl = body?.image_url
 
-                                // إظهار رسالة تفيد بأن الصورة تم رفعها بنجاح
-                                Toast.makeText(requireContext(), "تم رفع الصورة بنجاح: $uploadedImageUrl", Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(requireContext(), "الرابط فارغ", Toast.LENGTH_SHORT).show()
-                            }
+                        if (!uploadedImageUrl.isNullOrEmpty()) {
+                            // 1️⃣ حفظ الرابط في ViewModel
+                            Log.d("ImageUpload", "رابط الصورة المرفوعة: $uploadedImageUrl")
+
+                            viewModel.setImageUrl(uploadedImageUrl)
+
+                            // 2️⃣ بعد حفظ الرابط، استدعِ updateProfile()
+                            viewModel.updateProfile()
+
+                            Toast.makeText(requireContext(), "تم رفع الصورة بنجاح!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(requireContext(), "فشل في جلب الرابط من الاستجابة!", Toast.LENGTH_SHORT).show()
                         }
                     } else {
                         Toast.makeText(requireContext(), "حدث خطأ: ${response.message()}", Toast.LENGTH_SHORT).show()
                     }
-//
-//                        response.body()?.let {
-//
-//                            // التعامل مع الاستجابة الناجحة
-//                            // افترض أن الجسم يحتوي على رابط للصورة
-//                            val uploadedImageUrl = it.imageUrl  // ضع هنا كيفية استخراج الرابط من الاستجابة
-//
-//                            // هنا يمكنك استخدام الرابط كما تشاء
-//                            Toast.makeText(requireContext(), "تم رفع الصورة بنجاح: $uploadedImageUrl", Toast.LENGTH_SHORT).show()
-//
-//                            // مثلا تخزين الرابط في ViewModel
-//                            viewModel.setImageUrl(uploadedImageUrl)
-//                            Toast.makeText(requireContext(), "Image uploaded successfully", Toast.LENGTH_SHORT).show()
-//                        }
-//                    } else {
-//                        Toast.makeText(requireContext(), "Error: ${response.message()}", Toast.LENGTH_SHORT).show()
-//                    }
                 }
 
-                override fun onFailure(call: Call<ImageUploadResponse>, t: Throwable) {
+
+
+
+//                override fun onResponse(
+//                    call: Call<ImageUploadResponse>,
+//                    response: Response<ImageUploadResponse>
+//                ) {
+//                    if (response.isSuccessful) {
+//                        response.body()?.let {
+//                            val uploadedImageUrl = it.imageUrl  // افترض أن الجسم يحتوي على رابط للصورة
+//
+//                            // تحقق من الرابط قبل التحديث
+//                            if (uploadedImageUrl != null) {
+//                                // تحديث الـ LiveData في الـ ViewModel
+//                                viewModel.setImageUrl(uploadedImageUrl)
+//
+//                                // إظهار رسالة تفيد بأن الصورة تم رفعها بنجاح
+//                                Toast.makeText(requireContext(), "تم رفع الصورة بنجاح: $uploadedImageUrl", Toast.LENGTH_SHORT).show()
+//                            } else {
+//                                Toast.makeText(requireContext(), "الرابط فارغ", Toast.LENGTH_SHORT).show()
+//                            }
+//                        }
+//                    } else {
+//                        Toast.makeText(requireContext(), "حدث خطأ: ${response.message()}", Toast.LENGTH_SHORT).show()
+//                    }
+////
+////                        response.body()?.let {
+////
+////                            // التعامل مع الاستجابة الناجحة
+////                            // افترض أن الجسم يحتوي على رابط للصورة
+////                            val uploadedImageUrl = it.imageUrl  // ضع هنا كيفية استخراج الرابط من الاستجابة
+////
+////                            // هنا يمكنك استخدام الرابط كما تشاء
+////                            Toast.makeText(requireContext(), "تم رفع الصورة بنجاح: $uploadedImageUrl", Toast.LENGTH_SHORT).show()
+////
+////                            // مثلا تخزين الرابط في ViewModel
+////                            viewModel.setImageUrl(uploadedImageUrl)
+////                            Toast.makeText(requireContext(), "Image uploaded successfully", Toast.LENGTH_SHORT).show()
+////                        }
+////                    } else {
+////                        Toast.makeText(requireContext(), "Error: ${response.message()}", Toast.LENGTH_SHORT).show()
+////                    }
+//                }
+
+                override fun onFailure(call: Call<UploadResponse>, t: Throwable) {
                     Toast.makeText(requireContext(), "Failed: ${t.message}", Toast.LENGTH_SHORT).show()
                 }
             })

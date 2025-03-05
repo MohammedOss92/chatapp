@@ -50,13 +50,12 @@ class ChatAppViewModel : ViewModel() {
     val messageRepo = MessageRepo()
     var token: String? = null
     val chatlistRepo = ChatListRepo()
-    private val _imageUrl = MutableLiveData<String>()
-    val imageUrl2: LiveData<String> get() = _imageUrl
 
     // دالة لتحديث الرابط
-    fun setImageUrl(url: String) {
-        _imageUrl.value = url
-    }
+
+
+
+
     val coroutineExceptionHandler = CoroutineExceptionHandler { _, throwable ->
         throwable.printStackTrace()
     }
@@ -243,8 +242,46 @@ class ChatAppViewModel : ViewModel() {
 
     }
 
+    fun setImageUrl(newUrl: String) {
+        Log.d("ChatAppViewModel", "تم تحديث رابط الصورة إلى: $newUrl")  // تسجيل القيمة
+
+        imageUrl.postValue(newUrl) // تحديث LiveData
+    }
 
     fun updateProfile() = viewModelScope.launch(Dispatchers.IO) {
+        val context = MyApplication.instance.applicationContext
+
+        val imageUrlValue = imageUrl.value ?: return@launch  // إذا لم يكن هناك رابط، لا تتابع
+
+        val hashMapUser = hashMapOf<String, Any>(
+            "username" to (name.value ?: ""),
+            "imageUrl" to imageUrlValue  // حفظ رابط الصورة
+        )
+
+        firestore.collection("Users").document(Utils.getUidLoggedIn()).update(hashMapUser)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    Toast.makeText(context, "تم تحديث الملف الشخصي بنجاح!", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+        // تحديث صورة المستخدم في محادثات الأصدقاء
+        val mysharedPrefs = SharedPrefs(context)
+        val friendid = mysharedPrefs.getValue("friendid")
+
+        val hashMapUpdate = hashMapOf<String, Any>(
+            "friendsimage" to imageUrlValue,
+            "name" to (name.value ?: ""),
+            "person" to (name.value ?: "")
+        )
+
+        firestore.collection("Conversation${friendid}").document(Utils.getUidLoggedIn()).update(hashMapUpdate)
+
+        firestore.collection("Conversation${Utils.getUidLoggedIn()}").document(friendid!!).update("person", "you")
+    }
+
+
+    fun up1dateProfile() = viewModelScope.launch(Dispatchers.IO) {
 
         val context = MyApplication.instance.applicationContext
 
