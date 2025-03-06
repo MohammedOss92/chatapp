@@ -37,9 +37,10 @@ class UserAdapter : RecyclerView.Adapter<UserHolder>() {
 
         val users = listOfUsers[position]
 
-        val name = users.username!!.split("\\s".toRegex())[0]
-        holder.profileName.setText(name)
-
+//        val name = users.username!!.split("\\s".toRegex())[0]
+//        holder.profileName.setText(name)
+        val name = users.username?.split("\\s".toRegex())?.get(0) ?: "Unknown"
+        holder.profileName.text = users.username
 
         if (users.status.equals("Online")){
 
@@ -52,8 +53,8 @@ class UserAdapter : RecyclerView.Adapter<UserHolder>() {
 
         }
 
-
-        Glide.with(holder.itemView.context).load(users.imageUrl).into(holder.imageProfile)
+//        holder.imageProfile.setBackgroundResource(R.drawable.person)
+//        Glide.with(holder.itemView.context).load(users.imageUrl).into(holder.imageProfile)
 
         holder.itemView.setOnClickListener {
             listener?.onUserSelected(position, users)

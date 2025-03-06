@@ -189,6 +189,7 @@ class HomeFragment : Fragment(), OnItemClickListener, onChatClicked {
 
     }
 
+
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
     }
