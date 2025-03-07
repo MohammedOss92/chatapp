@@ -54,7 +54,15 @@ class UserAdapter : RecyclerView.Adapter<UserHolder>() {
         }
 
 //        holder.imageProfile.setBackgroundResource(R.drawable.person)
-//        Glide.with(holder.itemView.context).load(users.imageUrl).into(holder.imageProfile)
+        if (!users.imageUrl.isNullOrEmpty()) {
+            Glide.with(holder.itemView.context)
+                .load(users.imageUrl)
+                .placeholder(R.drawable.person) // صورة افتراضية في حال لم تكن هناك صورة
+                .error(R.drawable.person) // صورة افتراضية في حال حدث خطأ أثناء التحميل
+                .into(holder.imageProfile)
+        } else {
+            holder.imageProfile.setImageResource(R.drawable.person) // صورة افتراضية عند عدم وجود صورة
+        }
 
         holder.itemView.setOnClickListener {
             listener?.onUserSelected(position, users)
