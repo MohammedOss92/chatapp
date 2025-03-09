@@ -63,6 +63,13 @@ class Utils {
 
         }
 
+        fun getCurrentDate(): String {
+            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val date = Date(System.currentTimeMillis())
+            return formatter.format(date)
+        }
+
+
         // not using
 
 //        fun getToken() : String{

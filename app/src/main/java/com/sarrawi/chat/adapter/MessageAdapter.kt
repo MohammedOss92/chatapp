@@ -44,7 +44,7 @@ class MessageAdapter : RecyclerView.Adapter<MessageHolder>() {
 
         holder.messageText.text = message.message
         holder.timeOfSent.text = message.time?.substring(0, 5) ?: ""
-
+//        holder.timeOfSent.text = "${message.date} ${message.time?.substring(0, 5) ?: ""}" // عرض التاريخ مع الوقت، فقط الساعات والدقائق
 
 
 

@@ -190,7 +190,89 @@ class ChatAppViewModel : ViewModel() {
 
 
         }
+/*fun sendMessage(sender: String, receiver: String, friendname: String, friendimage: String) =
+    viewModelScope.launch(Dispatchers.IO) {
 
+        val context = MyApplication.instance.applicationContext
+
+        // تجهيز البيانات لإرسالها
+        val messageText = message.value!!
+        val time = Utils.getTime()
+        val date = Utils.getCurrentDate()  // الحصول على التاريخ الحالي
+
+        // البيانات التي سيتم تخزينها في Firestore
+        val hashMap = hashMapOf<String, Any>(
+            "sender" to sender,
+            "receiver" to receiver,
+            "message" to messageText,
+            "time" to time,
+            "date" to date  // إضافة التاريخ
+        )
+
+        // إنشاء uniqueId باستخدام sender و receiver
+        val uniqueId = listOf(sender, receiver).sorted()
+        uniqueId.joinToString(separator = "")
+
+        val friendnamesplit = friendname.split("\\s".toRegex())[0]
+        val mysharedPrefs = SharedPrefs(context)
+        mysharedPrefs.setValue("friendid", receiver)
+        mysharedPrefs.setValue("chatroomid", uniqueId.toString())
+        mysharedPrefs.setValue("friendname", friendnamesplit)
+        mysharedPrefs.setValue("friendimage", friendimage)
+
+        // إرسال الرسالة إلى Firestore
+        firestore.collection("Messages").document(uniqueId.toString()).collection("chats")
+            .document(time).set(hashMap).addOnCompleteListener { taskmessage ->
+
+                val setHashap = hashMapOf<String, Any>(
+                    "friendid" to receiver,
+                    "time" to time,
+                    "sender" to Utils.getUidLoggedIn(),
+                    "message" to messageText,
+                    "friendsimage" to friendimage,
+                    "name" to friendname,
+                    "person" to "you"
+                )
+
+                firestore.collection("Conversation${Utils.getUidLoggedIn()}").document(receiver)
+                    .set(setHashap)
+
+                firestore.collection("Conversation${receiver}").document(Utils.getUidLoggedIn())
+                    .update(
+                        "message", messageText,
+                        "time", time,
+                        "person", name.value!!
+                    )
+
+                firestore.collection("Tokens").document(receiver).addSnapshotListener { value, error ->
+
+                    if (value != null && value.exists()) {
+                        val tokenObject = value.toObject(Token::class.java)
+                        token = tokenObject?.token!!
+
+                        val loggedInUsername = mysharedPrefs.getValue("username")!!.split("\\s".toRegex())[0]
+
+                        if (messageText.isNotEmpty() && receiver.isNotEmpty()) {
+                            // إرسال إشعار إذا كان هناك رسالة غير فارغة
+                            // PushNotification(
+                            //     NotificationData(loggedInUsername, messageText), token!!
+                            // ).also {
+                            //     sendNotification(it)
+                            // }
+                        } else {
+                            Log.e("ChatAppViewModel", "NO TOKEN, NO NOTIFICATION")
+                        }
+                    }
+
+                    Log.e("ViewModel", token.toString())
+
+                    if (taskmessage.isSuccessful) {
+                        message.value = ""
+                    }
+                }
+            }
+    }
+*/
 
     // getting messages
 
