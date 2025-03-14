@@ -21,7 +21,15 @@ class MessageRepo {
 
     val firestore = FirebaseFirestore.getInstance()
 
+/*📅 2025-03-14
+  - مرحبًا، كيف حالك؟
+  - أنا بخير، وأنت؟
+  - ماذا تفعل اليوم؟
 
+📅 2025-03-15
+  - صباح الخير!
+  - كيف كان يومك أمس؟
+*/
 
 
     fun getMessages(friendid: String): LiveData<List<Messages>> {

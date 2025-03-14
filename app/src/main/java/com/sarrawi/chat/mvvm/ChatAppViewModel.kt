@@ -76,122 +76,123 @@ class ChatAppViewModel : ViewModel() {
 
     // sendMessage
 
+//    fun sendMessage(sender: String, receiver: String, friendname: String, friendimage: String) =
+//        viewModelScope.launch(Dispatchers.IO) {
+//
+//            val context = MyApplication.instance.applicationContext
+//
+//            val hashMap = hashMapOf<String, Any>(
+//                "sender" to sender,
+//                "receiver" to receiver,
+//                "message" to message.value!!,
+//                "time" to Utils.getTime()
+//            )
+//
+//
+//            val uniqueId = listOf(sender, receiver).sorted()
+//            uniqueId.joinToString(separator = "")
+//
+//
+//            val friendnamesplit = friendname.split("\\s".toRegex())[0]
+//            val mysharedPrefs = SharedPrefs(context)
+//            mysharedPrefs.setValue("friendid", receiver)
+//            mysharedPrefs.setValue("chatroomid", uniqueId.toString())
+//            mysharedPrefs.setValue("friendname", friendnamesplit)
+//            mysharedPrefs.setValue("friendimage", friendimage)
+//
+//
+//
+//
+//            firestore.collection("Messages").document(uniqueId.toString()).collection("chats")
+//                .document(Utils.getTime()).set(hashMap).addOnCompleteListener { taskmessage ->
+//
+//
+//                    val setHashap = hashMapOf<String, Any>(
+//                        "friendid" to receiver,
+//                        "time" to Utils.getTime(),
+//                        "sender" to Utils.getUidLoggedIn(),
+//                        "message" to message.value!!,
+//                        "friendsimage" to friendimage,
+//                        "name" to friendname,
+//                        "person" to "you"
+//                    )
+//
+//
+//                    firestore.collection("Conversation${Utils.getUidLoggedIn()}").document(receiver)
+//                        .set(setHashap)
+//
+//
+//
+//                    firestore.collection("Conversation${receiver}").document(Utils.getUidLoggedIn())
+//                        .update(
+//                            "message",
+//                            message.value!!,
+//                            "time",
+//                            Utils.getTime(),
+//                            "person",
+//                            name.value!!
+//                        )
+//
+//
+//
+//                    firestore.collection("Tokens").document(receiver).addSnapshotListener { value, error ->
+//
+//
+//                        if (value != null && value.exists()) {
+//
+//
+//                            val tokenObject = value.toObject(Token::class.java)
+//
+//
+//                            token = tokenObject?.token!!
+//
+//
+//                            val loggedInUsername =
+//                                mysharedPrefs.getValue("username")!!.split("\\s".toRegex())[0]
+//
+//
+//
+//                            if (message.value!!.isNotEmpty() && receiver.isNotEmpty()) {
+//
+////                                PushNotification(
+////                                    NotificationData(loggedInUsername, message.value!!), token!!
+////                                ).also {
+////                                    sendNotification(it)
+////                                }
+//
+//                            } else {
+//
+//
+//                                Log.e("ChatAppViewModel", "NO TOKEN, NO NOTIFICATION")
+//                            }
+//
+//
+//                        }
+//
+//                        Log.e("ViewModel", token.toString())
+//
+//
+//
+//                        if (taskmessage.isSuccessful){
+//
+//                            message.value = ""
+//
+//
+//
+//                        }
+//
+//
+//                    }
+//                }
+//
+//
+//
+//
+//
+//        }
+
     fun sendMessage(sender: String, receiver: String, friendname: String, friendimage: String) =
         viewModelScope.launch(Dispatchers.IO) {
-
-            val context = MyApplication.instance.applicationContext
-
-            val hashMap = hashMapOf<String, Any>(
-                "sender" to sender,
-                "receiver" to receiver,
-                "message" to message.value!!,
-                "time" to Utils.getTime()
-            )
-
-
-            val uniqueId = listOf(sender, receiver).sorted()
-            uniqueId.joinToString(separator = "")
-
-
-            val friendnamesplit = friendname.split("\\s".toRegex())[0]
-            val mysharedPrefs = SharedPrefs(context)
-            mysharedPrefs.setValue("friendid", receiver)
-            mysharedPrefs.setValue("chatroomid", uniqueId.toString())
-            mysharedPrefs.setValue("friendname", friendnamesplit)
-            mysharedPrefs.setValue("friendimage", friendimage)
-
-
-
-
-            firestore.collection("Messages").document(uniqueId.toString()).collection("chats")
-                .document(Utils.getTime()).set(hashMap).addOnCompleteListener { taskmessage ->
-
-
-                    val setHashap = hashMapOf<String, Any>(
-                        "friendid" to receiver,
-                        "time" to Utils.getTime(),
-                        "sender" to Utils.getUidLoggedIn(),
-                        "message" to message.value!!,
-                        "friendsimage" to friendimage,
-                        "name" to friendname,
-                        "person" to "you"
-                    )
-
-
-                    firestore.collection("Conversation${Utils.getUidLoggedIn()}").document(receiver)
-                        .set(setHashap)
-
-
-
-                    firestore.collection("Conversation${receiver}").document(Utils.getUidLoggedIn())
-                        .update(
-                            "message",
-                            message.value!!,
-                            "time",
-                            Utils.getTime(),
-                            "person",
-                            name.value!!
-                        )
-
-
-
-                    firestore.collection("Tokens").document(receiver).addSnapshotListener { value, error ->
-
-
-                        if (value != null && value.exists()) {
-
-
-                            val tokenObject = value.toObject(Token::class.java)
-
-
-                            token = tokenObject?.token!!
-
-
-                            val loggedInUsername =
-                                mysharedPrefs.getValue("username")!!.split("\\s".toRegex())[0]
-
-
-
-                            if (message.value!!.isNotEmpty() && receiver.isNotEmpty()) {
-
-//                                PushNotification(
-//                                    NotificationData(loggedInUsername, message.value!!), token!!
-//                                ).also {
-//                                    sendNotification(it)
-//                                }
-
-                            } else {
-
-
-                                Log.e("ChatAppViewModel", "NO TOKEN, NO NOTIFICATION")
-                            }
-
-
-                        }
-
-                        Log.e("ViewModel", token.toString())
-
-
-
-                        if (taskmessage.isSuccessful){
-
-                            message.value = ""
-
-
-
-                        }
-
-
-                    }
-                }
-
-
-
-
-
-        }
-/*fun sendMessage(sender: String, receiver: String, friendname: String, friendimage: String) =
-    viewModelScope.launch(Dispatchers.IO) {
 
         val context = MyApplication.instance.applicationContext
 
@@ -272,7 +273,7 @@ class ChatAppViewModel : ViewModel() {
                 }
             }
     }
-*/
+
 
     // getting messages
 

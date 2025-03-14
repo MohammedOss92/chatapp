@@ -69,6 +69,11 @@ class Utils {
             return formatter.format(date)
         }
 
+        fun formatDate(timestamp: String): String {
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) // استخراج التاريخ فقط
+            val date = Date(timestamp.toLong()) // تحويل النص إلى رقم ثم إلى تاريخ
+            return sdf.format(date)
+        }
 
         // not using
 
