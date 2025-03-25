@@ -269,6 +269,8 @@ class ChatAppViewModel : ViewModel() {
 
                     if (taskmessage.isSuccessful) {
                         message.value = ""
+                        message.postValue("")  // إعادة تعيين الإدخال
+
                     }
                 }
             }
