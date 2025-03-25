@@ -42,7 +42,8 @@ class MessageRepo {
 
 
 
-        firestore.collection("Messages").document(uniqueId.toString()).collection("chats").orderBy("time", Query.Direction.ASCENDING)
+        firestore.collection("Messages").document(uniqueId.toString()).collection("chats").orderBy("date", Query.Direction.ASCENDING)
+
             .addSnapshotListener { snapshot, exception ->
 
                 if (exception != null) {
