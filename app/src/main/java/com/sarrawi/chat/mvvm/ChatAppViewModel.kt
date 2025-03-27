@@ -135,6 +135,8 @@ class ChatAppViewModel : ViewModel() {
                             "message" to messageText,
                             "person" to (mySharedPrefs.getValue("username")?.substringBefore(" ") ?: sender),
                             "friendsimage" to (mySharedPrefs.getValue("myprofileimage") ?: ""), // ✅ تخزين صورة المرسل
+                            "friendsimage" to (mySharedPrefs.getValue("friendsimage") ?: ""), // صورة المرسل يتم تخزينها هنا
+
                             "name" to (mySharedPrefs.getValue("username") ?: "") // ✅ تخزين اسم المرسل
                         )
 
@@ -229,6 +231,7 @@ class ChatAppViewModel : ViewModel() {
                             "message" to messageText,
                             "person" to (mySharedPrefs.getValue("username")?.substringBefore(" ") ?: sender),
                             "friendsimage" to (mySharedPrefs.getValue("myprofileimage") ?: ""), // ✅ تخزين صورة المرسل
+                            "friendsimage" to (mySharedPrefs.getValue("friendsimage") ?: ""), // صورة المرسل يتم تخزينها هنا
 
                             "name" to (mySharedPrefs.getValue("username") ?: "") // ✅ تخزين اسم المرسل
                         )
