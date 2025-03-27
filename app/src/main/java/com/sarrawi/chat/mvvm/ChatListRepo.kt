@@ -77,7 +77,7 @@ class ChatListRepo() {
 
     }
 
-    fun getAllChatList(): LiveData<List<RecentChats>> {
+    fun getAllChatList2(): LiveData<List<RecentChats>> {
         val mainChatList = MutableLiveData<List<RecentChats>>()
 
         firestore.collection("Conversation${Utils.getUidLoggedIn()}")
@@ -94,5 +94,25 @@ class ChatListRepo() {
 
         return mainChatList
     }
+
+    fun getAllChatList(): LiveData<List<RecentChats>> {
+        val mainChatList = MutableLiveData<List<RecentChats>>()
+        val userId = Utils.getUidLoggedIn()
+
+        firestore.collection("Conversation$userId")
+            .orderBy("time", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, exception ->
+                if (exception != null) {
+                    Log.e("Firestore", "Error fetching chat list", exception)
+                    return@addSnapshotListener
+                }
+
+                val chatList = snapshot?.documents?.mapNotNull { it.toObject(RecentChats::class.java) }
+                mainChatList.postValue(chatList ?: emptyList()) // تحديث LiveData
+            }
+
+        return mainChatList
+    }
+
 
 }

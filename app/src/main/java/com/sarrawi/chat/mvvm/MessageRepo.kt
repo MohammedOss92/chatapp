@@ -32,7 +32,7 @@ class MessageRepo {
 */
 
 
-    fun getMessages(friendid: String): LiveData<List<Messages>> {
+    fun getسMessages(friendid: String): LiveData<List<Messages>> {
 
         val messages = MutableLiveData<List<Messages>>()
 
@@ -91,48 +91,38 @@ class MessageRepo {
 
 
     }
-//للل
-/*fun getMessages(friendid: String): LiveData<List<Messages>> {
+    fun getMessages(friendid: String): LiveData<List<Messages>> {
+        val messages = MutableLiveData<List<Messages>>()
+        val uniqueId = listOf(Utils.getUidLoggedIn(), friendid).sorted().joinToString("")
 
-    val messages = MutableLiveData<List<Messages>>()
+        firestore.collection("Messages").document(uniqueId).collection("chats")
+            .orderBy("date", Query.Direction.ASCENDING)
+            .addSnapshotListener { snapshot, exception ->
 
-    val uniqueId = listOf(Utils.getUidLoggedIn(), friendid).sorted()
-    uniqueId.joinToString(separator = "")
+                if (exception != null) {
+                    Log.e("ChatViewModel", "Firestore Error: ${exception.message}")
+                    return@addSnapshotListener
+                }
 
-    // جلب الرسائل من Firestore وترتيبها حسب التاريخ (time)
-    firestore.collection("Messages").document(uniqueId.toString()).collection("chats")
-        .orderBy("time", Query.Direction.ASCENDING)
-        .addSnapshotListener { snapshot, exception ->
+                val messagesList = mutableListOf<Messages>()
 
-            if (exception != null) {
-                return@addSnapshotListener
-            }
-
-            val messagesList = mutableListOf<Messages>()
-
-            if (!snapshot!!.isEmpty) {
-
-                snapshot.documents.forEach { document ->
-
+                snapshot?.documents?.forEach { document ->
                     val messageModel = document.toObject(Messages::class.java)
 
-                    if (messageModel != null && (
-                        (messageModel.sender == Utils.getUidLoggedIn() && messageModel.receiver == friendid) ||
-                        (messageModel.sender == friendid && messageModel.receiver == Utils.getUidLoggedIn())
-                    )) {
-                        messageModel.let {
-                            messagesList.add(it!!)
-                        }
+                    if (messageModel != null &&
+                        ((messageModel.sender == Utils.getUidLoggedIn() && messageModel.receiver == friendid) ||
+                                (messageModel.sender == friendid && messageModel.receiver == Utils.getUidLoggedIn()))) {
+
+                        messagesList.add(messageModel)
                     }
                 }
 
-                messages.value = messagesList
+                messages.postValue(messagesList) // 🔥 تحديث LiveData باستخدام postValue()
             }
-        }
 
-    return messages
-}
-*/
+        return messages
+    }
+
 
 }
 
