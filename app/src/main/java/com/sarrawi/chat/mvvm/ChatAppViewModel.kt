@@ -75,8 +75,107 @@ class ChatAppViewModel : ViewModel() {
     }
 
 
-
     fun sendMessage(sender: String, receiver: String, friendname: String, friendimage: String) =
+        viewModelScope.launch(Dispatchers.IO) {
+
+            val context = MyApplication.instance.applicationContext
+            val messageText = message.value ?: return@launch // تجنب الأخطاء إذا كانت القيمة `null`
+            if (messageText.isEmpty()) {
+                Log.e("sendMessage", "Message text is empty")
+                return@launch // تجنب إرسال رسالة فارغة
+            }
+
+            val time = Utils.getTime()
+            val date = Utils.getCurrentDate()
+
+            // إنشاء uniqueId باستخدام sender و receiver
+            val uniqueId = listOf(sender, receiver).sorted().joinToString("")
+
+            // تقسيم الاسم الأول بأمان
+            val friendNameSplit = friendname.split("\\s+".toRegex()).firstOrNull() ?: friendname
+
+            // تخزين بيانات المحادثة في Shared Preferences
+            val mySharedPrefs = SharedPrefs(context).apply {
+                setValue("friendid", receiver)
+                setValue("chatroomid", uniqueId)
+                setValue("friendname", friendNameSplit)
+                setValue("friendimage", friendimage)
+            }
+
+            // تجهيز البيانات لإرسالها إلى Firestore
+            val messageData = hashMapOf(
+                "sender" to sender,
+                "receiver" to receiver,
+                "message" to messageText,
+                "time" to time,
+                "date" to date
+            )
+
+            // إرسال الرسالة إلى Firestore
+            firestore.collection("Messages").document(uniqueId).collection("chats")
+                .document(time).set(messageData)
+                .addOnCompleteListener { taskMessage ->
+                    if (taskMessage.isSuccessful) {
+                        Log.d("Firestore", "Message sent successfully")
+
+                        // تحديث قائمة المحادثات للطرفين
+                        val senderChatData = hashMapOf(
+                            "friendid" to receiver,
+                            "time" to time,
+                            "sender" to Utils.getUidLoggedIn(),
+                            "message" to messageText,
+                            "friendsimage" to friendimage, // ✅ صورة المستقبل هي صورة المستقبل
+                            "name" to friendname,
+                            "person" to "you"
+                        )
+
+                        val receiverChatData = hashMapOf(
+                            "friendid" to sender,
+                            "time" to time,
+                            "message" to messageText,
+                            "person" to (mySharedPrefs.getValue("username")?.substringBefore(" ") ?: sender),
+                            "friendsimage" to friendimage, // ✅ استخدم صورة المرسل بدلاً من myprofileimage
+                            "name" to (mySharedPrefs.getValue("username") ?: "")
+                        )
+
+                        firestore.collection("Conversation${Utils.getUidLoggedIn()}")
+                            .document(receiver).set(senderChatData, SetOptions.merge())
+
+                        firestore.collection("Conversation${receiver}")
+                            .document(Utils.getUidLoggedIn()).set(receiverChatData, SetOptions.merge())
+
+                        // التحقق من وجود توكن الإشعارات للطرف المستقبل
+                        firestore.collection("Tokens").document(receiver)
+                            .get()
+                            .addOnSuccessListener { value ->
+                                val token = value.toObject(Token::class.java)?.token
+                                if (!token.isNullOrEmpty() && messageText.isNotEmpty() && receiver.isNotEmpty()) {
+                                    val loggedInUsername = mySharedPrefs.getValue("username")
+                                        ?.split("\\s+".toRegex())?.firstOrNull() ?: "User"
+
+                                    // إرسال الإشعار
+                                    // PushNotification(
+                                    //     NotificationData(loggedInUsername, messageText), token
+                                    // ).also {
+                                    //     sendNotification(it)
+                                    // }
+                                } else {
+                                    Log.e("ChatAppViewModel", "No token found, no notification sent")
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("ChatAppViewModel", "Failed to retrieve token", e)
+                            }
+
+                        // إعادة تعيين الرسالة
+                        message.postValue("")
+                    } else {
+                        Log.e("Firestore", "Failed to send message", taskMessage.exception)
+                    }
+                }
+        }
+
+    fun sendMessageeeeeeeee(sender: String, receiver: String, friendname: String, friendimage: String) =
         viewModelScope.launch(Dispatchers.IO) {
 
             val context = MyApplication.instance.applicationContext
