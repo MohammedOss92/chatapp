@@ -526,7 +526,7 @@ class ChatAppViewModel : ViewModel() {
         imageUrl.postValue(newUrl) // تحديث LiveData
     }
 
-    fun updateProfile() = viewModelScope.launch(Dispatchers.IO) {
+    fun updateProfileشش() = viewModelScope.launch(Dispatchers.IO) {
         val context = MyApplication.instance.applicationContext
 
         val imageUrlValue = imageUrl.value ?: return@launch  // إذا لم يكن هناك رابط، لا تتابع
@@ -559,42 +559,54 @@ class ChatAppViewModel : ViewModel() {
     }
 
 
-    fun up1dateProfile() = viewModelScope.launch(Dispatchers.IO) {
-
+    fun updateProfile() = viewModelScope.launch(Dispatchers.IO) {
         val context = MyApplication.instance.applicationContext
 
-        val hashMapUser =
-            hashMapOf<String, Any>("username" to name.value!!, "imageUrl" to imageUrl.value!!)
+        val imageUrlValue = imageUrl.value ?: return@launch  // إذا لم يكن هناك رابط، لا تتابع
 
-        firestore.collection("Users").document(Utils.getUidLoggedIn()).update(hashMapUser).addOnCompleteListener {
+        // تحديث بيانات المستخدم في Firestore
+        val hashMapUser = hashMapOf<String, Any>(
+            "username" to (name.value ?: ""),
+            "imageUrl" to imageUrlValue  // حفظ رابط الصورة
+        )
 
-            if (it.isSuccessful){
-
-                Toast.makeText(context, "Updated", Toast.LENGTH_SHORT ).show()
-
-
+        firestore.collection("Users").document(Utils.getUidLoggedIn()).update(hashMapUser)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    Toast.makeText(context, "تم تحديث الملف الشخصي بنجاح!", Toast.LENGTH_SHORT).show()
+                }
             }
 
-        }
-
-
+        // تحديث صورة المستخدم في محادثات الأصدقاء
         val mysharedPrefs = SharedPrefs(context)
         val friendid = mysharedPrefs.getValue("friendid")
 
-        val hashMapUpdate = hashMapOf<String, Any>("friendsimage" to imageUrl.value!!, "name" to name.value!!, "person" to name.value!!)
+        val hashMapUpdate = hashMapOf<String, Any>(
+            "friendsimage" to imageUrlValue,
+            "name" to (name.value ?: ""),
+            "person" to (name.value ?: "")
+        )
 
+        // تحديث المحادثة الخاصة بالمرسل في Conversation
+        firestore.collection("Conversation${Utils.getUidLoggedIn()}")
+            .document(friendid!!).update(hashMapUpdate)
+            .addOnSuccessListener {
+                Log.d("Firestore", "Sender's conversation updated with new image")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Failed to update sender's conversation", e)
+            }
 
-
-        // updating the chatlist and recent list message, image etc
-
-        firestore.collection("Conversation${friendid}").document(Utils.getUidLoggedIn()).update(hashMapUpdate)
-
-        firestore.collection("Conversation${Utils.getUidLoggedIn()}").document(friendid!!).update("person", "you")
-
-
-
+        // تحديث المحادثة الخاصة بالمستقبل في Conversation
+        firestore.collection("Conversation${friendid}")
+            .document(Utils.getUidLoggedIn()).update("person", "you")
+            .addOnSuccessListener {
+                Log.d("Firestore", "Receiver's conversation updated")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Failed to update receiver's conversation", e)
+            }
     }
-
 
 
 }

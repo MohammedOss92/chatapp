@@ -236,7 +236,10 @@ class SettingFragment : Fragment() {
         return Uri.parse(path)
     }
 
-    private fun uploadImage() {
+
+
+
+    private fun uشploadImage() {
         val selectedUri = selectedImageUri
         if (selectedUri == null) {
             Toast.makeText(requireContext(), "No image selected", Toast.LENGTH_SHORT).show()
@@ -348,5 +351,72 @@ class SettingFragment : Fragment() {
         }
     }
 
+    private fun uploadImage() {
+        val selectedUri = selectedImageUri
+        if (selectedUri == null) {
+            Toast.makeText(requireContext(), "No image selected", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val parcelFileDescriptor = requireContext().contentResolver.openFileDescriptor(
+            selectedUri, "r", null
+        ) ?: run {
+            Toast.makeText(requireContext(), "Unable to open image", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        try {
+            // احصل على context من الـ Fragment للوصول إلى cacheDir
+            val context = requireContext()
+
+            val inputStream = FileInputStream(parcelFileDescriptor.fileDescriptor)
+            val file = File(context.cacheDir, context.contentResolver.getFileName(selectedUri))
+            val outputStream = FileOutputStream(file)
+
+            // نسخ البيانات من المدخلات إلى المخرجات
+            inputStream.copyTo(outputStream)
+
+            val body = UploadRequestBody(file, "image", requireContext())
+
+            ApiService().uploadImage(
+                MultipartBody.Part.createFormData(
+                    "image", file.name, body
+                )
+            ).enqueue(object : Callback<UploadResponse> {
+                override fun onResponse(
+                    call: Call<UploadResponse>,
+                    response: Response<UploadResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        val body = response.body()
+
+                        val uploadedImageUrl = body?.image_url
+
+                        if (!uploadedImageUrl.isNullOrEmpty()) {
+                            // 1️⃣ حفظ الرابط في ViewModel
+                            Log.d("ImageUpload", "رابط الصورة المرفوعة: $uploadedImageUrl")
+
+                            viewModel.setImageUrl(uploadedImageUrl)
+
+                            // 2️⃣ بعد حفظ الرابط، استدعِ updateProfile()
+                            viewModel.updateProfile()
+
+                            Toast.makeText(requireContext(), "تم رفع الصورة بنجاح!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(requireContext(), "فشل في جلب الرابط من الاستجابة!", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(requireContext(), "حدث خطأ: ${response.message()}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<UploadResponse>, t: Throwable) {
+                    Toast.makeText(requireContext(), "فشل: ${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "حدث خطأ: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
 
 }
