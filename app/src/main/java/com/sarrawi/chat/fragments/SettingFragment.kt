@@ -239,7 +239,7 @@ class SettingFragment : Fragment() {
 
 
 
-    private fun uشploadImage() {
+    private fun uploadImage() {
         val selectedUri = selectedImageUri
         if (selectedUri == null) {
             Toast.makeText(requireContext(), "No image selected", Toast.LENGTH_SHORT).show()
@@ -351,7 +351,7 @@ class SettingFragment : Fragment() {
         }
     }
 
-    private fun uploadImage() {
+    private fun uaploadImage() {
         val selectedUri = selectedImageUri
         if (selectedUri == null) {
             Toast.makeText(requireContext(), "No image selected", Toast.LENGTH_SHORT).show()

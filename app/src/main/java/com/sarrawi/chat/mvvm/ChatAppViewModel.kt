@@ -526,7 +526,7 @@ class ChatAppViewModel : ViewModel() {
         imageUrl.postValue(newUrl) // تحديث LiveData
     }
 
-    fun updateProfileشش() = viewModelScope.launch(Dispatchers.IO) {
+    fun updateProfile() = viewModelScope.launch(Dispatchers.IO) {
         val context = MyApplication.instance.applicationContext
 
         val imageUrlValue = imageUrl.value ?: return@launch  // إذا لم يكن هناك رابط، لا تتابع
@@ -559,7 +559,7 @@ class ChatAppViewModel : ViewModel() {
     }
 
 
-    fun updateProfile() = viewModelScope.launch(Dispatchers.IO) {
+    fun updateProfileaa() = viewModelScope.launch(Dispatchers.IO) {
         val context = MyApplication.instance.applicationContext
 
         val imageUrlValue = imageUrl.value ?: return@launch  // إذا لم يكن هناك رابط، لا تتابع
