@@ -21,18 +21,15 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import de.hdodenhof.circleimageview.CircleImageView
 
-class RecentChatAdapter(private val onSelectionChanged: (Boolean) -> Unit) : RecyclerView.Adapter<MyChatListHolder>() {
+class RecentChatAdapter : RecyclerView.Adapter<MyChatListHolder>() {
 
-    private var listOfChats = listOf<RecentChats>()
-    fun getList(): List<RecentChats> {
-        return listOfChats
-    }
+    var listOfChats = listOf<RecentChats>()
+
 
     private var listener: onChatClicked? = null
     var chatShitModal = RecentChats()
 
-    private val selectedMessages = mutableSetOf<RecentChats>()
-    private var selectionMode = false
+
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyChatListHolder {
@@ -57,27 +54,9 @@ class RecentChatAdapter(private val onSelectionChanged: (Boolean) -> Unit) : Rec
 
     }
 
-    private fun isSelected(recenet: RecentChats) = selectedMessages.contains(recenet)
 
-    fun getSelectedMessages(): List<RecentChats> = selectedMessages.toList()
 
-    private fun toggleSelection(recenet: RecentChats) {
-        if (selectedMessages.contains(recenet)) {
-            selectedMessages.remove(recenet)
-        } else {
-            selectedMessages.add(recenet)
-        }
-        selectionMode = selectedMessages.isNotEmpty()
-        onSelectionChanged(selectionMode)
-        notifyDataSetChanged()
-    }
 
-    fun clearSelection() {
-        selectedMessages.clear()
-        selectionMode = false
-        onSelectionChanged(false)
-        notifyDataSetChanged()
-    }
 
     override fun onBindViewHolder(holder: MyChatListHolder, position: Int) {
 
@@ -105,17 +84,6 @@ class RecentChatAdapter(private val onSelectionChanged: (Boolean) -> Unit) : Rec
 
         }
 
-        holder.itemView.setOnLongClickListener {
-            toggleSelection(chatlist)
-            true
-        }
-
-        holder.itemView.setOnClickListener {
-            if (selectionMode) toggleSelection(chatlist)
-        }
-
-
-        holder.itemView.setBackgroundColor(if (isSelected(chatlist)) Color.LTGRAY else Color.TRANSPARENT)
 
 
 

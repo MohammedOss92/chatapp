@@ -135,7 +135,7 @@ class HomeFragment : Fragment(), OnItemClickListener, onChatClicked {
         rvUsers = view.findViewById(R.id.rvUsers)
         rvRecentChats = view.findViewById(R.id.rvRecentChats)
         adapter = UserAdapter()
-        recentadapter = RecentChatAdapter{isSelectionActive -> toggleActionMode(isSelectionActive)}
+        recentadapter = RecentChatAdapter()
 
 
         val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
@@ -259,80 +259,7 @@ class HomeFragment : Fragment(), OnItemClickListener, onChatClicked {
     }
 
 
-    private fun toggleActionMode(isSelectionActive: Boolean) {
-        if (isSelectionActive) {
-            if (actionMode == null) {
-                // استدعاء startSupportActionMode من AppCompatActivity
-                actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(actionModeCallback)
-            }
-            actionMode?.title = "${recentadapter.getSelectedMessages().size} محدد"
-        } else {
-            actionMode?.finish()
-        }
-    }
 
-
-
-
-    private val actionModeCallback = object : ActionMode.Callback {
-        override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-            requireActivity().menuInflater.inflate(R.menu.selection_menu2, menu)
-            return true
-        }
-
-        override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?) = false
-
-        override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
-            when (item?.itemId) {
-//                R.id.action_block -> copyMessages()
-
-
-                R.id.action_delete -> {
-                    val selectedChat = recentadapter.getSelectedMessages().firstOrNull()
-                    selectedChat?.let {
-                        deleteChat(it.id)  // تمرير chatId هنا
-                    }
-                }
-
-            }
-            return true
-        }
-
-        override fun onDestroyActionMode(mode: ActionMode?) {
-            recentadapter.clearSelection()
-            actionMode = null
-        }
-    }
-
-
-    private fun deleteChat(chatId: String) {
-        val db = FirebaseFirestore.getInstance()
-
-        // بدء عملية الحذف باستخدام Batch
-        val batch = db.batch()
-
-        // حذف الرسائل المرتبطة بالمحادثة
-        val messagesRef = db.collection("messages").whereEqualTo("chatId", chatId)
-        messagesRef.get().addOnSuccessListener { querySnapshot ->
-            for (document in querySnapshot.documents) {
-                val messageRef = db.collection("messages").document(document.id)
-                batch.delete(messageRef)
-            }
-
-            // حذف المحادثة نفسها بعد حذف الرسائل
-            val chatRef = db.collection("RecentChats").document(chatId)
-            batch.delete(chatRef)
-
-            // تنفيذ عمليات الحذف دفعة واحدة
-            batch.commit().addOnSuccessListener {
-                Toast.makeText(context, "تم حذف المحادثة كاملة", Toast.LENGTH_SHORT).show()
-                // تحديث البيانات بعد الحذف
-                viewModel.getRecentUsers() // أو قم بتحديث القائمة في الـ RecyclerView
-            }.addOnFailureListener {
-                Toast.makeText(context, "فشل الحذف", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 
 }
 
