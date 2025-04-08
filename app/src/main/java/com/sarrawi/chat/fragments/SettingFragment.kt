@@ -24,8 +24,12 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
 import com.bumptech.glide.Glide
+import com.google.firebase.auth.EmailAuthProvider
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.sarrawi.chat.R
 import com.sarrawi.chat.Utils
+import com.sarrawi.chat.activities.SignInActivity
 import com.sarrawi.chat.databinding.FragmentSettingBinding
 import com.sarrawi.chat.mvvm.ChatAppViewModel
 import com.sarrawi.chat.uploadImage.up2.ApiService
@@ -126,11 +130,19 @@ class SettingFragment : Fragment() {
             }
             builder.show()
 
+        }
 
 
-
-
-
+        binding.deleteaccount.setOnClickListener {
+            // تأكيد من المستخدم قبل الحذف
+            AlertDialog.Builder(requireContext())
+                .setTitle("حذف الحساب")
+                .setMessage("هل أنت متأكد من أنك تريد حذف حسابك؟")
+                .setPositiveButton("نعم") { _, _ ->
+                    deleteAccount()
+                }
+                .setNegativeButton("لا") { dialog, _ -> dialog.dismiss() }
+                .show()
         }
 
 
@@ -418,5 +430,85 @@ class SettingFragment : Fragment() {
             Toast.makeText(requireContext(), "حدث خطأ: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
+
+
+
+    private fun deleteAccount() {
+        val user = FirebaseAuth.getInstance().currentUser
+
+        if (user != null) {
+            // طلب كلمة المرور من المستخدم إذا كانت الجلسة قديمة
+            val email = user.email
+            val password = "أدخل كلمة المرور الخاصة بك"  // يجب على المستخدم إدخال كلمة مروره مجددًا
+
+            val credential = EmailAuthProvider.getCredential(email!!, password)
+
+            user.reauthenticate(credential).addOnCompleteListener { reauthTask ->
+                if (reauthTask.isSuccessful) {
+                    // إعادة التوثيق ناجح، الآن نبدأ بحذف الحساب
+                    user.delete().addOnCompleteListener { deleteTask ->
+                        if (deleteTask.isSuccessful) {
+                            // حذف بيانات المستخدم من Firestore
+                            val db = FirebaseFirestore.getInstance()
+                            db.collection("Users").document(user.uid).delete()
+                                .addOnSuccessListener {
+                                    Toast.makeText(requireContext(), "تم حذف الحساب بنجاح", Toast.LENGTH_LONG).show()
+                                    // توجيه المستخدم إلى شاشة تسجيل الدخول بعد الحذف
+                                    startActivity(Intent(requireContext(), SignInActivity::class.java))
+                                    activity?.finish()
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(requireContext(), "فشل حذف بيانات Firestore", Toast.LENGTH_SHORT).show()
+                                }
+                        } else {
+                            Toast.makeText(requireContext(), "فشل حذف الحساب", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    Toast.makeText(requireContext(), "بيانات الدخول غير صحيحة", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+
+    private fun delete1Account() {
+        val user = FirebaseAuth.getInstance().currentUser
+
+        if (user != null) {
+            // بداية من هنا، نحتاج لتوثيق المستخدم قبل الحذف إذا كانت الجلسة قديمة
+            val email = user.email
+            val password = "أدخل كلمة المرور الخاصة بك"  // يجب على المستخدم إدخال كلمة مروره مرة أخرى إذا كانت الجلسة قديمة
+
+            val credential = EmailAuthProvider.getCredential(email!!, password)
+
+            user.reauthenticate(credential).addOnCompleteListener {
+                if (it.isSuccessful) {
+                    // حذف الحساب من Firebase Authentication
+                    user.delete().addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            // حذف بيانات المستخدم من Firestore إذا لزم الأمر
+                            val db = FirebaseFirestore.getInstance()
+                            db.collection("Users").document(user.uid).delete()
+                                .addOnSuccessListener {
+                                    Toast.makeText(requireContext(), "تم حذف الحساب", Toast.LENGTH_LONG).show()
+                                    // بعد الحذف، قم بتوجيه المستخدم إلى شاشة تسجيل الدخول
+                                    startActivity(Intent(requireContext(), SignInActivity::class.java))
+                                    activity?.finish()
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(requireContext(), "فشل حذف بيانات Firestore", Toast.LENGTH_SHORT).show()
+                                }
+                        } else {
+                            Toast.makeText(requireContext(), "فشل حذف الحساب", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    Toast.makeText(requireContext(), "بيانات الدخول غير صحيحة", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
 
 }

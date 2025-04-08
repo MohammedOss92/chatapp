@@ -13,7 +13,7 @@ android {
         applicationId "com.sarrawi.chat"
         minSdk 21
         targetSdk 34
-        versionCode 3
+        versionCode 7
         versionName "1.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -98,7 +98,6 @@ dependencies {
 
     // Firebase
 
-    implementation 'com.google.android.gms:play-services-ads:23.2.0'
 
 
     implementation platform('com.google.firebase:firebase-bom:31.3.0')
